@@ -1,11 +1,16 @@
 import { Countdown } from "@/components/countdown";
-import { TsPreview } from "@/components/ts-preview";
+import { TsListLive } from "@/components/ts-list-live";
+import { NightWindows } from "@/components/night-windows";
+import { SleepPlan } from "@/components/sleep-plan";
 import { RACE } from "@/lib/raam/race-config";
+
+// Ensure live Supabase queries on every request
+export const revalidate = 30;
 
 export default function Home() {
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-6 py-10">
-      <header className="flex items-start justify-between">
+      <header className="flex flex-col items-start justify-between gap-3 sm:flex-row">
         <div>
           <div className="text-xs uppercase tracking-[0.2em] text-amber-400">
             Race Across America 2026 · 44th Edition
@@ -18,9 +23,11 @@ export default function Home() {
             {RACE.racer.number}
           </p>
         </div>
-        <div className="text-right text-xs text-zinc-500">
-          <div>Oceanside, CA → Atlantic City, NJ</div>
-          <div>
+        <div className="text-right text-xs text-zinc-500 sm:pt-4">
+          <div className="font-mono text-emerald-400">
+            Target: Sub 10d 6h · 12.2+ mph
+          </div>
+          <div className="mt-1">
             {RACE.course.distance_miles.toLocaleString()} mi ·{" "}
             {RACE.course.time_stations} TS ·{" "}
             {RACE.course.elevation_gain_ft.toLocaleString()} ft climb
@@ -37,23 +44,28 @@ export default function Home() {
           hint="Solo Men Under 50"
         />
         <Stat
-          label="2023 Finish Time"
+          label="2023 Finish"
           value={RACE.baseline_2023.total_time_ddhhmm}
           hint={`${RACE.baseline_2023.avg_speed_mph} mph avg`}
         />
         <Stat
-          label="TS Checkpoints"
+          label="Gain Target"
+          value="12h+"
+          hint="Sub 10d 6h vs 2023"
+        />
+        <Stat
+          label="Checkpoints"
           value="15 · 35 · 54"
           hint="Soft · Soft · HARD"
         />
-        <Stat
-          label="States Crossed"
-          value={`${RACE.course.states_crossed}`}
-          hint={`${RACE.course.time_zones} time zones`}
-        />
       </section>
 
-      <TsPreview />
+      <TsListLive />
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <SleepPlan />
+        <NightWindows />
+      </div>
 
       <footer className="pt-6 text-center text-xs text-zinc-600">
         Built for Team Kabir · Crew Chief: Sapna · C&C: Vishal Behal

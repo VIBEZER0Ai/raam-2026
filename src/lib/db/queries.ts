@@ -140,3 +140,37 @@ export async function getRaceProtocol(): Promise<DbRaceProtocol[]> {
   }
   return (data ?? []) as DbRaceProtocol[];
 }
+
+export interface DbRule {
+  code: string;
+  category:
+    | "time"
+    | "night"
+    | "geo"
+    | "safety"
+    | "support"
+    | "racer"
+    | "penalty"
+    | "nutrition"
+    | "sleep";
+  kind: "prohibit" | "require" | "monitor" | "trigger";
+  severity: "info" | "warn" | "critical";
+  name: string;
+  description: string;
+  source_ref: string | null;
+  dq_trigger: boolean;
+  sort_order: number;
+}
+
+export async function getRules(): Promise<DbRule[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("rule")
+    .select("*")
+    .order("sort_order", { ascending: true });
+  if (error) {
+    console.error("[getRules]", error);
+    return [];
+  }
+  return (data ?? []) as DbRule[];
+}

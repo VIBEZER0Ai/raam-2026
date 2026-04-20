@@ -16,6 +16,7 @@ const TABS = [
   { href: "/time-stations", label: "Time Stations" },
   { href: "/nutrition",     label: "Nutrition" },
   { href: "/weather",       label: "Weather" },
+  { href: "/compliance",    label: "Compliance" },
 ];
 
 export function TopNav() {

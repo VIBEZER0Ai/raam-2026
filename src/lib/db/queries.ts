@@ -174,3 +174,52 @@ export async function getRules(): Promise<DbRule[]> {
   }
   return (data ?? []) as DbRule[];
 }
+
+export interface DbPenalty {
+  id: string;
+  issued_at: string;
+  kind: "warning" | "penalty_1h" | "dq";
+  rule_ref: string | null;
+  description: string;
+  issued_by: string | null;
+  ts_num: number | null;
+  resolved: boolean;
+}
+
+export interface PenaltyLedger {
+  penalties: DbPenalty[];
+  warning_count: number;
+  penalty_1h_count: number;
+  dq_count: number;
+  /** Official 1h penalties — the only ones that count toward the 5-penalty DQ threshold. */
+  dq_risk_count: number;
+}
+
+export async function getPenaltyLedger(): Promise<PenaltyLedger> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("penalty")
+    .select("*")
+    .order("issued_at", { ascending: false });
+  if (error) {
+    console.error("[getPenaltyLedger]", error);
+    return {
+      penalties: [],
+      warning_count: 0,
+      penalty_1h_count: 0,
+      dq_count: 0,
+      dq_risk_count: 0,
+    };
+  }
+  const rows = (data ?? []) as DbPenalty[];
+  const warning_count = rows.filter((p) => p.kind === "warning").length;
+  const penalty_1h_count = rows.filter((p) => p.kind === "penalty_1h").length;
+  const dq_count = rows.filter((p) => p.kind === "dq").length;
+  return {
+    penalties: rows,
+    warning_count,
+    penalty_1h_count,
+    dq_count,
+    dq_risk_count: penalty_1h_count,
+  };
+}

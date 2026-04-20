@@ -1,4 +1,4 @@
-import { getRules } from "@/lib/db/queries";
+import { getRules, getPenaltyLedger } from "@/lib/db/queries";
 import {
   evaluateRules,
   isNight,
@@ -7,6 +7,7 @@ import {
 } from "@/lib/raam/rules-engine";
 import { Card, CardHead, CardBody } from "@/components/ui/card";
 import { Pill, type PillKind } from "@/components/ui/pill";
+import { PenaltyLogForm } from "@/components/ui/penalty-log-form";
 import { cn } from "@/lib/utils";
 
 const CATEGORY_LABEL: Record<string, string> = {
@@ -40,11 +41,14 @@ const SEV_PILL: Record<string, PillKind> = {
 };
 
 export async function Compliance() {
-  const rules = await getRules();
+  const [rules, ledger] = await Promise.all([getRules(), getPenaltyLedger()]);
 
-  // Mock live context — replace with derived state from gps_ping, shifts,
-  // nutrition_log, rest_log, penalty tables as those feeds come online.
-  const ctx: RuleContext = buildMockContext();
+  // Context now uses real penalty count from DB. Other fields stay mock
+  // until gps_ping, shifts, nutrition_log, rest_log feeds come online.
+  const ctx: RuleContext = {
+    ...buildMockContext(),
+    penaltyCount: ledger.dq_risk_count,
+  };
   const night = isNight(ctx);
   const activeEvals = evaluateRules(ctx);
   const evalByCode = new Map(activeEvals.map((e) => [e.code, e]));
@@ -85,7 +89,7 @@ export async function Compliance() {
         <Card>
           <CardBody>
             <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[color:var(--fg-3)]">
-              Penalty ledger
+              Penalty ledger · DQ at 5
             </div>
             <div className="mt-2 font-mono text-[34px] font-bold leading-none tabular-nums">
               {ctx.penaltyCount}
@@ -105,6 +109,15 @@ export async function Compliance() {
                 )}
                 style={{ width: `${(ctx.penaltyCount / 5) * 100}%` }}
               />
+            </div>
+            <div className="mt-2 flex gap-3 font-mono text-[10px] text-[color:var(--fg-4)]">
+              <span>{ledger.warning_count} warn</span>
+              <span className="text-amber-400">
+                {ledger.penalty_1h_count} × 1h
+              </span>
+              {ledger.dq_count > 0 && (
+                <span className="text-red-400">{ledger.dq_count} DQ</span>
+              )}
             </div>
           </CardBody>
         </Card>
@@ -138,6 +151,68 @@ export async function Compliance() {
               {rules.filter((r) => r.dq_trigger).length} DQ triggers
             </div>
           </CardBody>
+        </Card>
+      </div>
+
+      {/* Penalty log form + recent entries */}
+      <div className="grid gap-3.5 lg:grid-cols-[1fr_1fr]">
+        <PenaltyLogForm />
+        <Card>
+          <CardHead
+            left={`Ledger · ${ledger.penalties.length} entries`}
+            right={
+              <span className="font-mono">
+                {ledger.dq_risk_count} of 5 · DQ threshold
+              </span>
+            }
+          />
+          <div className="flex flex-col">
+            {ledger.penalties.length === 0 ? (
+              <div className="px-4 py-6 text-center text-[12px] text-[color:var(--fg-4)]">
+                No penalties recorded. Clean record.
+              </div>
+            ) : (
+              ledger.penalties.slice(0, 8).map((p) => (
+                <div
+                  key={p.id}
+                  className="flex items-start gap-3 border-b border-[color:var(--border-soft)] px-4 py-2.5 text-[12px] last:border-b-0"
+                >
+                  <Pill
+                    kind={
+                      p.kind === "dq"
+                        ? "CRITICAL"
+                        : p.kind === "penalty_1h"
+                          ? "WARN"
+                          : "AMBER"
+                    }
+                  >
+                    {p.kind === "penalty_1h"
+                      ? "1h"
+                      : p.kind === "dq"
+                        ? "DQ"
+                        : "WARN"}
+                  </Pill>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[color:var(--fg-1)]">
+                      {p.description}
+                    </div>
+                    <div className="mt-0.5 font-mono text-[10px] text-[color:var(--fg-5)]">
+                      {p.rule_ref && `${p.rule_ref} · `}
+                      {p.ts_num !== null && `TS${p.ts_num} · `}
+                      {p.issued_by && `by ${p.issued_by} · `}
+                      {new Date(p.issued_at).toLocaleString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </div>
+                  </div>
+                  {p.resolved && <Pill kind="OFF">RESOLVED</Pill>}
+                </div>
+              ))
+            )}
+          </div>
         </Card>
       </div>
 

@@ -7,9 +7,9 @@ import {
   ALERTS,
   CREW,
   RACE_STATE,
-  TARGETS,
   WEATHER_NOW,
 } from "@/lib/raam/mock-data";
+import type { DbTimeStation, DbTargetPlan } from "@/lib/db/queries";
 import { AlertBanner } from "@/components/chrome/alert-banner";
 import { Card, CardBody, CardHead } from "@/components/ui/card";
 import { Pill } from "@/components/ui/pill";
@@ -18,14 +18,19 @@ import { TSBadge } from "@/components/ui/ts-badge";
 import { CrewCard } from "@/components/ui/crew-card";
 import { ProgressRow } from "@/components/ui/progress-row";
 import { MiniMap } from "@/components/ui/mini-map";
-import { TIME_STATIONS } from "@/lib/raam/time-stations";
 
-export function WarRoom() {
+export interface WarRoomProps {
+  stations: DbTimeStation[];
+  targets: DbTargetPlan[];
+}
+
+export function WarRoom({ stations, targets }: WarRoomProps) {
   useTick(1000);
   const s = RACE_STATE;
   const cutoff = fmtDHMS(msDiff(RACE.finish.hard_cutoff_utc));
-  const nextTs = TIME_STATIONS[s.currentTs + 1];
-  const tgt = TARGETS[s.currentTs];
+  const nextTs = stations[s.currentTs + 1];
+  const targetByTs = new Map(targets.map((t) => [t.ts_num, t]));
+  const tgt = targetByTs.get(s.currentTs);
   const criticalAlert = ALERTS.find((a) => a.sev === "CRITICAL");
   const softCutoffs = new Set<number>(
     RACE.intermediate_checkpoints.filter((c) => !c.hard).map((c) => c.ts),
@@ -68,13 +73,17 @@ export function WarRoom() {
           progress={68}
         />
         <StatCard
-          eyebrow={`Next TS · ${nextTs.ts_num}`}
+          eyebrow={nextTs ? `Next TS · ${nextTs.ts_num}` : "Next TS"}
           value={
             <span className="text-[24px]">
-              {nextTs.name}, {nextTs.state}
+              {nextTs ? `${nextTs.name}, ${nextTs.state}` : "—"}
             </span>
           }
-          sub={`mi ${nextTs.mile_total.toFixed(1)} · ETA ${tgt?.time ?? "—"} · RRS 30:00`}
+          sub={
+            nextTs
+              ? `mi ${Number(nextTs.mile_total).toFixed(1)} · ETA ${tgt?.target_arr_time ?? "—"} · RRS 30:00`
+              : "pending"
+          }
         />
       </div>
 
@@ -83,7 +92,7 @@ export function WarRoom() {
         <Card>
           <CardHead left="Time Stations — Next 4" right={`${s.currentTs}/54`} />
           <div className="flex flex-col">
-            {TIME_STATIONS.slice(s.currentTs, s.currentTs + 4).map((t, i) => {
+            {stations.slice(s.currentTs, s.currentTs + 4).map((t, i) => {
               const isCurrent = i === 0;
               const isHard = hardCutoffs.has(t.ts_num);
               const isSoft = softCutoffs.has(t.ts_num);
@@ -102,7 +111,7 @@ export function WarRoom() {
               ]
                 .filter(Boolean)
                 .join(" ");
-              const tgtRow = TARGETS[t.ts_num];
+              const tgtRow = targetByTs.get(t.ts_num);
               return (
                 <div key={t.ts_num} className={rowClass}>
                   <TSBadge num={t.ts_num} kind={badgeKind} />
@@ -118,10 +127,11 @@ export function WarRoom() {
                   </div>
                   <div className="text-right">
                     <div className="font-mono text-[11px] text-emerald-400">
-                      target {tgtRow?.time ?? "—"}
+                      target {tgtRow?.target_arr_time ?? "—"}
                     </div>
                     <div className="mt-0.5 font-mono text-[11px] text-[color:var(--fg-4)]">
-                      {(t.mile_total - s.currentMile).toFixed(1)} mi away
+                      {(Number(t.mile_total) - s.currentMile).toFixed(1)} mi
+                      away
                     </div>
                   </div>
                 </div>

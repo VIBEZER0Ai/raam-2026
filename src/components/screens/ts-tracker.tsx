@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { TIME_STATIONS } from "@/lib/raam/time-stations";
-import { TARGETS, RACE_STATE } from "@/lib/raam/mock-data";
+import { RACE_STATE } from "@/lib/raam/mock-data";
+import type { DbTimeStation, DbTargetPlan } from "@/lib/db/queries";
 import { RACE } from "@/lib/raam/race-config";
 import { Card, CardHead } from "@/components/ui/card";
 import { TSBadge } from "@/components/ui/ts-badge";
@@ -12,7 +12,12 @@ import { cn } from "@/lib/utils";
 const FILTERS = ["All", "Upcoming", "Passed", "Danger", "Cutoffs"] as const;
 type Filter = (typeof FILTERS)[number];
 
-export function TSTracker() {
+export interface TSTrackerProps {
+  stations: DbTimeStation[];
+  targets: DbTargetPlan[];
+}
+
+export function TSTracker({ stations, targets }: TSTrackerProps) {
   const [filter, setFilter] = useState<Filter>("All");
   const softCutoffs = new Set<number>(
     RACE.intermediate_checkpoints.filter((c) => !c.hard).map((c) => c.ts),
@@ -20,13 +25,18 @@ export function TSTracker() {
   const hardCutoffs = new Set<number>(
     RACE.intermediate_checkpoints.filter((c) => c.hard).map((c) => c.ts),
   );
+  const targetByTs = new Map(targets.map((t) => [t.ts_num, t]));
 
-  const rows = TIME_STATIONS.filter((t) => {
+  const rows = stations.filter((t) => {
     if (filter === "All") return true;
     if (filter === "Upcoming") return t.ts_num > RACE_STATE.currentTs;
     if (filter === "Passed") return t.ts_num < RACE_STATE.currentTs;
     if (filter === "Danger")
-      return t.avg_this_ts_2023 > 0 && t.avg_this_ts_2023 < 8;
+      return (
+        t.avg_this_ts_2023 !== null &&
+        Number(t.avg_this_ts_2023) > 0 &&
+        Number(t.avg_this_ts_2023) < 8
+      );
     if (filter === "Cutoffs")
       return softCutoffs.has(t.ts_num) || hardCutoffs.has(t.ts_num);
     return true;
@@ -49,9 +59,10 @@ export function TSTracker() {
               }}
             />
             {RACE.intermediate_checkpoints.map((c) => {
-              const ts = TIME_STATIONS.find((t) => t.ts_num === c.ts);
+              const ts = stations.find((t) => t.ts_num === c.ts);
               if (!ts) return null;
-              const pct = (Number(ts.mile_total) / RACE.course.distance_miles) * 100;
+              const pct =
+                (Number(ts.mile_total) / RACE.course.distance_miles) * 100;
               return (
                 <span
                   key={c.ts}
@@ -109,7 +120,10 @@ export function TSTracker() {
               const isCurrent = t.ts_num === RACE_STATE.currentTs;
               const isHard = hardCutoffs.has(t.ts_num);
               const isSoft = softCutoffs.has(t.ts_num);
-              const isDanger = t.avg_this_ts_2023 > 0 && t.avg_this_ts_2023 < 8;
+              const isDanger =
+                t.avg_this_ts_2023 !== null &&
+                Number(t.avg_this_ts_2023) > 0 &&
+                Number(t.avg_this_ts_2023) < 8;
               const badgeKind = isCurrent
                 ? "current"
                 : isHard
@@ -119,7 +133,7 @@ export function TSTracker() {
                     : t.ts_num < RACE_STATE.currentTs
                       ? "passed"
                       : "up";
-              const target = TARGETS[t.ts_num];
+              const target = targetByTs.get(t.ts_num);
 
               return (
                 <div
@@ -149,7 +163,9 @@ export function TSTracker() {
                     {t.split_2023_elapsed}
                   </div>
                   <div className="text-right font-mono tabular-nums text-[color:var(--fg-3)]">
-                    {Number(t.avg_speed_2023).toFixed(2)}
+                    {t.avg_speed_2023 !== null
+                      ? Number(t.avg_speed_2023).toFixed(2)
+                      : "—"}
                   </div>
                   <div
                     className={cn(
@@ -157,12 +173,13 @@ export function TSTracker() {
                       isDanger ? "text-red-400" : "text-[color:var(--fg-4)]",
                     )}
                   >
-                    {t.avg_this_ts_2023 > 0
+                    {t.avg_this_ts_2023 !== null &&
+                    Number(t.avg_this_ts_2023) > 0
                       ? Number(t.avg_this_ts_2023).toFixed(1)
                       : "—"}
                   </div>
                   <div className="text-right font-mono tabular-nums text-emerald-400">
-                    {target ? `${target.time.replace(/\s[A-Z]{3}$/, "")}` : "—"}
+                    {target ? target.target_arr_time : "—"}
                   </div>
                 </div>
               );

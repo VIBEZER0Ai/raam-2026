@@ -164,6 +164,43 @@ export interface DbRule {
   sort_order: number;
 }
 
+export interface DbCrewMember {
+  id: string;
+  auth_user_id: string | null;
+  full_name: string;
+  role:
+    | "crew_chief"
+    | "cc_operator"
+    | "follow_driver"
+    | "shuttle_driver"
+    | "rv_crew"
+    | "media"
+    | "rider"
+    | "observer";
+  title: string | null;
+  initials: string | null;
+  color: string | null;
+  phone: string | null;
+  email: string | null;
+  emergency_contact: string | null;
+  active: boolean;
+  created_at: string;
+}
+
+export async function getCrewMembers(): Promise<DbCrewMember[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("crew_member")
+    .select("*")
+    .eq("active", true)
+    .order("full_name", { ascending: true });
+  if (error) {
+    console.error("[getCrewMembers]", error);
+    return [];
+  }
+  return (data ?? []) as DbCrewMember[];
+}
+
 export async function getRules(): Promise<DbRule[]> {
   const supabase = await createClient();
   const { data, error } = await supabase

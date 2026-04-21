@@ -5,19 +5,25 @@
 
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import type { DbCrewMember } from "@/lib/db/queries";
 
-const TABS = [
-  { id: "members", l: "Members", sub: "12 people · 5 roles" },
-  { id: "devices", l: "Vehicles & devices", sub: "3 vehicles · 14 devices" },
-  { id: "audit", l: "Audit log", sub: "Last 90 days" },
-] as const;
-type TabId = (typeof TABS)[number]["id"];
+type TabId = "members" | "devices" | "audit";
 
 export interface AdminProps {
   tab?: TabId;
+  crew?: DbCrewMember[];
 }
 
-export function Admin({ tab = "members" }: AdminProps) {
+export function Admin({ tab = "members", crew = [] }: AdminProps) {
+  const TABS = [
+    { id: "members" as const, l: "Members", sub: `${crew.length} people` },
+    {
+      id: "devices" as const,
+      l: "Vehicles & devices",
+      sub: "3 vehicles · 14 devices",
+    },
+    { id: "audit" as const, l: "Audit log", sub: "Last 90 days" },
+  ];
   return (
     <div className="flex flex-col gap-0">
       <div className="flex items-center gap-5 border-b border-[color:var(--border)] bg-[color:var(--bg-elev)] px-8 py-4">
@@ -71,7 +77,7 @@ export function Admin({ tab = "members" }: AdminProps) {
       </div>
 
       <div className="flex-1 p-6">
-        {tab === "members" && <Members />}
+        {tab === "members" && <Members crew={crew} />}
         {tab === "devices" && <Devices />}
         {tab === "audit" && <Audit />}
       </div>
@@ -79,21 +85,38 @@ export function Admin({ tab = "members" }: AdminProps) {
   );
 }
 
-function Members() {
-  const members = [
-    { init: "SR", n: "Sapna R.", e: "sapna@teamkabir.com", role: "Chief", status: "Active", mfa: true, last: "2m" },
-    { init: "VB", n: "Vishal B.", e: "vishal@zer0.ai", role: "CC", status: "Active", mfa: true, last: "now" },
-    { init: "KR", n: "Kabir R.", e: "kabir@teamkabir.com", role: "Rider", status: "Active", mfa: true, last: "5m" },
-    { init: "PS", n: "Priya S.", e: "priya@teamkabir.com", role: "Medical", status: "Active", mfa: true, last: "1h" },
-    { init: "RM", n: "Rohan M.", e: "rohan@teamkabir.com", role: "Crew", status: "Active", mfa: false, last: "3h" },
-    { init: "AV", n: "Amit V.", e: "amit@teamkabir.com", role: "Crew", status: "Active", mfa: true, last: "45m" },
-    { init: "DK", n: "Dev K.", e: "dev@teamkabir.com", role: "Crew", status: "Active", mfa: true, last: "2h" },
-    { init: "AT", n: "Anika T.", e: "anika@teamkabir.com", role: "Crew", status: "Active", mfa: true, last: "4h" },
-    { init: "—", n: "pending@…", e: "parth@teamkabir.com", role: "Medical", status: "Invited", mfa: false, last: "never" },
-    { init: "MK", n: "Maya K.", e: "maya@teamkabir.com", role: "Read-only", status: "Active", mfa: true, last: "2d" },
-    { init: "RS", n: "Ravi S.", e: "ravi@sponsor.co", role: "Read-only", status: "Active", mfa: true, last: "6d" },
-    { init: "—", n: "disabled@…", e: "old@teamkabir.com", role: "Crew", status: "Disabled", mfa: false, last: "90d" },
-  ];
+const ROLE_LABEL: Record<string, string> = {
+  crew_chief: "Chief",
+  cc_operator: "CC",
+  follow_driver: "Crew",
+  shuttle_driver: "Crew",
+  rv_crew: "Crew",
+  media: "Media",
+  rider: "Rider",
+  observer: "Read-only",
+};
+
+function initialsFrom(name: string): string {
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((s) => s[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+function Members({ crew }: { crew: DbCrewMember[] }) {
+  const members = crew.length
+    ? crew.map((m) => ({
+        init: m.initials ?? initialsFrom(m.full_name),
+        n: m.full_name,
+        e: m.email ?? "—",
+        role: ROLE_LABEL[m.role] ?? "Crew",
+        title: m.title ?? "",
+        status: m.active ? "Active" : "Disabled",
+        mfa: true,
+        last: "—",
+      }))
+    : [];
   const roleColor: Record<string, string> = {
     Chief: "text-[color:var(--strava-orange)]",
     CC: "text-indigo-400",
@@ -170,7 +193,12 @@ function Members() {
                 : "text-[color:var(--fg)]",
             )}
           >
-            {m.n}
+            <div>{m.n}</div>
+            {m.title && (
+              <div className="mt-0.5 text-[10px] font-normal text-[color:var(--fg-4)]">
+                {m.title}
+              </div>
+            )}
           </div>
           <div className="font-mono text-[11px] text-[color:var(--fg-3)]">
             {m.e}

@@ -1,7 +1,10 @@
 import { Admin } from "@/components/screens/admin";
+import { getCrewMembers } from "@/lib/db/queries";
 
 type TabId = "members" | "devices" | "audit";
 const VALID: TabId[] = ["members", "devices", "audit"];
+
+export const revalidate = 30;
 
 export default async function AdminPage({
   searchParams,
@@ -12,5 +15,6 @@ export default async function AdminPage({
   const tab: TabId = (VALID as string[]).includes(sp.tab ?? "")
     ? (sp.tab as TabId)
     : "members";
-  return <Admin tab={tab} />;
+  const crew = await getCrewMembers();
+  return <Admin tab={tab} crew={crew} />;
 }

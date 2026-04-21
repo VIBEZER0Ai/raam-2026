@@ -3,10 +3,16 @@
 import { Card, CardHead } from "@/components/ui/card";
 import { CrewCard } from "@/components/ui/crew-card";
 import { Pill, type PillKind } from "@/components/ui/pill";
-import { MiniMap } from "@/components/ui/mini-map";
+import { RouteMap } from "@/components/ui/route-map";
 import { CREW, VEHICLES } from "@/lib/raam/mock-data";
+import type { DbTimeStation } from "@/lib/db/queries";
 
-export function CrewTracker() {
+export interface CrewTrackerProps {
+  stations: DbTimeStation[];
+  currentTs?: number;
+}
+
+export function CrewTracker({ stations, currentTs = 0 }: CrewTrackerProps) {
   return (
     <div className="flex flex-col gap-3.5">
       <Card>
@@ -68,7 +74,7 @@ export function CrewTracker() {
 
       <Card>
         <CardHead left="Live positions" right="map snapshot" />
-        <MiniMap />
+        <RouteMap stations={stations} currentTs={currentTs} height={320} />
       </Card>
 
       <Card>

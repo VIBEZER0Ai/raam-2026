@@ -5,6 +5,8 @@
  */
 
 import { cn } from "@/lib/utils";
+import { RouteMap } from "@/components/ui/route-map";
+import type { DbTimeStation } from "@/lib/db/queries";
 
 const CHEERS = [
   { n: "Rahul (Dad)", t: "2m", m: "Go Kabir! We're watching every mile from Pune." },
@@ -32,7 +34,17 @@ const KPIS = [
   { k: "ETA", v: "D11", u: "13:42 EDT", s: "+22m vs plan" },
 ];
 
-export function Spectator() {
+export interface SpectatorProps {
+  stations: DbTimeStation[];
+  currentTs?: number;
+  current?: { lat: number; lng: number } | null;
+}
+
+export function Spectator({
+  stations,
+  currentTs = 0,
+  current = null,
+}: SpectatorProps) {
   return (
     <div className="-mx-5 -mt-4">
       {/* Public nav */}
@@ -104,53 +116,12 @@ export function Spectator() {
       <div className="grid gap-7 px-10 py-8 lg:grid-cols-[1fr_380px]">
         <div>
           <div className="mb-6 overflow-hidden rounded-[14px] border border-[color:var(--border)] bg-[color:var(--bg-elev)]">
-            <div
-              className="relative h-[280px]"
-              style={{
-                background:
-                  "linear-gradient(135deg,#0c2030 0%,#302410 40%,#301010 100%)",
-              }}
-            >
-              <svg viewBox="0 0 900 280" className="h-full w-full">
-                <path
-                  d="M 40 220 Q 120 210 180 205 T 320 180 Q 400 170 480 155 T 620 115 Q 720 85 820 60"
-                  stroke="var(--strava-orange)"
-                  strokeWidth="3"
-                  fill="none"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M 40 220 Q 120 210 180 205 T 320 180 Q 400 170 480 155 T 520 148"
-                  stroke="var(--strava-orange)"
-                  strokeWidth="5"
-                  fill="none"
-                  strokeLinecap="round"
-                />
-                <g transform="translate(520 148)">
-                  <circle r="22" fill="var(--strava-orange)" fillOpacity="0.25" />
-                  <circle r="12" fill="var(--strava-orange)" />
-                  <circle r="5" fill="#fff" />
-                </g>
-                <text x="532" y="138" fontSize="11" fontWeight="800" fill="var(--fg)">
-                  Kabir · here
-                </text>
-                <circle cx="40" cy="220" r="6" fill="var(--emerald-400)" />
-                <text x="40" y="245" fontSize="9" fontWeight="800" fill="var(--fg)">
-                  OCEANSIDE
-                </text>
-                <circle cx="820" cy="60" r="6" fill="var(--indigo-400)" />
-                <text
-                  x="820"
-                  y="50"
-                  fontSize="9"
-                  fontWeight="800"
-                  fill="var(--fg)"
-                  textAnchor="end"
-                >
-                  ATLANTIC CITY
-                </text>
-              </svg>
-            </div>
+            <RouteMap
+              stations={stations}
+              currentTs={currentTs}
+              current={current}
+              height={320}
+            />
             <div className="grid grid-cols-4 border-t border-[color:var(--border)]">
               {KPIS.map((s, i) => (
                 <div

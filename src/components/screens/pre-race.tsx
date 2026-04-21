@@ -10,6 +10,7 @@ import type {
   DbSleepBlock,
 } from "@/lib/db/queries";
 import { Card } from "@/components/ui/card";
+import { RouteMap } from "@/components/ui/route-map";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -161,83 +162,7 @@ function RouteTab({
             Split segment
           </button>
         </div>
-        <div
-          className="relative h-[440px]"
-          style={{
-            background:
-              "linear-gradient(135deg,#0c2030 0%,#302410 40%,#301010 100%)",
-          }}
-        >
-          <svg viewBox="0 0 900 440" className="h-full w-full">
-            <path
-              d="M 40 340 Q 120 320 180 330 T 320 280 Q 400 260 480 240 T 620 180 Q 720 140 820 100"
-              stroke="var(--strava-orange)"
-              strokeWidth="3"
-              fill="none"
-              strokeLinecap="round"
-            />
-            <path
-              d="M 40 340 Q 120 320 180 330 T 320 280 Q 400 260 480 240 T 620 180 Q 720 140 820 100"
-              stroke="var(--strava-orange)"
-              strokeWidth="12"
-              fill="none"
-              strokeOpacity="0.18"
-              strokeLinecap="round"
-            />
-            {[
-              [40, 340],
-              [180, 330],
-              [320, 280],
-              [400, 260],
-              [480, 240],
-              [560, 210],
-              [620, 180],
-              [720, 140],
-              [820, 100],
-            ].map((p, i) => (
-              <g key={i}>
-                <circle
-                  cx={p[0]}
-                  cy={p[1]}
-                  r="7"
-                  fill="var(--bg-elev)"
-                  stroke="var(--strava-orange)"
-                  strokeWidth="2"
-                />
-                <text
-                  x={p[0]}
-                  y={p[1] + 3}
-                  textAnchor="middle"
-                  fontSize="9"
-                  fontWeight="800"
-                  fill="var(--fg)"
-                  fontFamily="ui-monospace"
-                >
-                  {i}
-                </text>
-              </g>
-            ))}
-            <text
-              x="40"
-              y="365"
-              fontSize="10"
-              fontWeight="800"
-              fill="var(--fg)"
-            >
-              OCEANSIDE
-            </text>
-            <text
-              x="820"
-              y="90"
-              fontSize="10"
-              fontWeight="800"
-              fill="var(--fg)"
-              textAnchor="end"
-            >
-              ATLANTIC CITY
-            </text>
-          </svg>
-        </div>
+        <RouteMap stations={stations} height={440} />
         <div className="border-t border-[color:var(--border)] p-4">
           <div className="mb-2 flex items-center">
             <div className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[color:var(--fg-3)]">

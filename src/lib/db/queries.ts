@@ -11,6 +11,8 @@ export interface DbTimeStation {
   state: string;
   mile_total: number;
   miles_to_fin: number;
+  lat: number | null;
+  lng: number | null;
   split_2023_elapsed: string | null;
   avg_speed_2023: number | null;
   avg_this_ts_2023: number | null;
@@ -66,7 +68,7 @@ export async function getTimeStations(): Promise<DbTimeStation[]> {
   const { data, error } = await supabase
     .from("time_station")
     .select(
-      "ts_num,name,state,mile_total,miles_to_fin,split_2023_elapsed,avg_speed_2023,avg_this_ts_2023,arrival_ts_edt",
+      "ts_num,name,state,mile_total,miles_to_fin,lat,lng,split_2023_elapsed,avg_speed_2023,avg_this_ts_2023,arrival_ts_edt",
     )
     .order("ts_num", { ascending: true });
   if (error) {

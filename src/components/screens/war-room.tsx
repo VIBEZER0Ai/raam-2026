@@ -21,7 +21,7 @@ import { StatCard } from "@/components/ui/stat-card";
 import { TSBadge } from "@/components/ui/ts-badge";
 import { CrewCard } from "@/components/ui/crew-card";
 import { ProgressRow } from "@/components/ui/progress-row";
-import { MiniMap } from "@/components/ui/mini-map";
+import { RouteMap } from "@/components/ui/route-map";
 
 export interface WarRoomProps {
   stations: DbTimeStation[];
@@ -299,7 +299,21 @@ export function WarRoom({ stations, targets, derived }: WarRoomProps) {
             </span>
           }
         />
-        <MiniMap />
+        <RouteMap
+          stations={stations}
+          currentTs={s.currentTs}
+          current={
+            derived.latest &&
+            derived.latest.lat !== null &&
+            derived.latest.lng !== null
+              ? {
+                  lat: Number(derived.latest.lat),
+                  lng: Number(derived.latest.lng),
+                }
+              : null
+          }
+          height={360}
+        />
         <div className="flex flex-wrap gap-2 border-t border-[color:var(--border)] px-3.5 py-2.5">
           <Pill kind="ON DUTY">Kabir live</Pill>
           <Pill kind="DRIVING">Follow 0.3 mi</Pill>

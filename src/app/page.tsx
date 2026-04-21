@@ -1,14 +1,19 @@
 import { WarRoom } from "@/components/screens/war-room";
 import { StrategyCards } from "@/components/screens/strategy-cards";
-import { getTimeStations, getTargetPlan } from "@/lib/db/queries";
+import {
+  getTimeStations,
+  getTargetPlan,
+  getDerivedRaceState,
+} from "@/lib/db/queries";
 
 // Fresh Supabase pull every 30s
 export const revalidate = 30;
 
 export default async function Home() {
-  const [stations, targets] = await Promise.all([
+  const [stations, targets, derived] = await Promise.all([
     getTimeStations(),
     getTargetPlan(),
+    getDerivedRaceState(),
   ]);
 
   if (stations.length === 0) {
@@ -28,7 +33,7 @@ export default async function Home() {
 
   return (
     <>
-      <WarRoom stations={stations} targets={targets} />
+      <WarRoom stations={stations} targets={targets} derived={derived} />
       <StrategyCards />
     </>
   );

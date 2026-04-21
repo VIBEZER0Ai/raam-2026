@@ -11,12 +11,16 @@ import { ALERTS } from "@/lib/raam/mock-data";
 import { cn } from "@/lib/utils";
 
 const TABS = [
-  { href: "/",              label: "War Room" },
-  { href: "/crew",          label: "Crew" },
-  { href: "/time-stations", label: "Time Stations" },
-  { href: "/nutrition",     label: "Nutrition" },
-  { href: "/weather",       label: "Weather" },
-  { href: "/compliance",    label: "Compliance" },
+  { href: "/",              label: "War Room",     group: "live" },
+  { href: "/crew",          label: "Crew",         group: "live" },
+  { href: "/time-stations", label: "Time Stations", group: "live" },
+  { href: "/nutrition",     label: "Nutrition",    group: "live" },
+  { href: "/weather",       label: "Weather",      group: "live" },
+  { href: "/compliance",    label: "Compliance",   group: "live" },
+  { href: "/pre-race",      label: "Pre-race",     group: "lifecycle" },
+  { href: "/spectator",     label: "Spectator",    group: "lifecycle" },
+  { href: "/admin",         label: "Admin",        group: "lifecycle" },
+  { href: "/debrief",       label: "Debrief",      group: "lifecycle" },
 ];
 
 export function TopNav() {

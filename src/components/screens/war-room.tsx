@@ -1,7 +1,7 @@
 "use client";
 
 import { useTick } from "@/lib/raam/use-tick";
-import { fmtDHMS, msDiff, pad2 } from "@/lib/raam/format";
+import { fmtDHMS, fmtPingAge, msDiff, pad2 } from "@/lib/raam/format";
 import { RACE } from "@/lib/raam/race-config";
 import {
   ALERTS,
@@ -9,7 +9,11 @@ import {
   RACE_STATE,
   WEATHER_NOW,
 } from "@/lib/raam/mock-data";
-import type { DbTimeStation, DbTargetPlan } from "@/lib/db/queries";
+import type {
+  DbTimeStation,
+  DbTargetPlan,
+  DerivedRaceState,
+} from "@/lib/db/queries";
 import { AlertBanner } from "@/components/chrome/alert-banner";
 import { Card, CardBody, CardHead } from "@/components/ui/card";
 import { Pill } from "@/components/ui/pill";
@@ -22,11 +26,22 @@ import { MiniMap } from "@/components/ui/mini-map";
 export interface WarRoomProps {
   stations: DbTimeStation[];
   targets: DbTargetPlan[];
+  derived: DerivedRaceState;
 }
 
-export function WarRoom({ stations, targets }: WarRoomProps) {
+export function WarRoom({ stations, targets, derived }: WarRoomProps) {
   useTick(1000);
-  const s = RACE_STATE;
+  const live = derived.latest !== null;
+  const s = live
+    ? {
+        currentTs: derived.currentTs,
+        currentMile: derived.currentMile,
+        currentSpeed: derived.currentSpeed,
+        elapsed: RACE_STATE.elapsed,
+        targetDelta: RACE_STATE.targetDelta,
+        avgSpeed: RACE_STATE.avgSpeed,
+      }
+    : RACE_STATE;
   const cutoff = fmtDHMS(msDiff(RACE.finish.hard_cutoff_utc));
   const nextTs = stations[s.currentTs + 1];
   const targetByTs = new Map(targets.map((t) => [t.ts_num, t]));
@@ -59,18 +74,22 @@ export function WarRoom({ stations, targets }: WarRoomProps) {
           sub={`${pad2(cutoff.m)}m ${pad2(cutoff.s)}s · hard · Jun 29 15:00 EDT`}
         />
         <StatCard
-          eyebrow="Current speed"
+          eyebrow={live ? "Current speed · live" : "Current speed · offline"}
           valueKind="orange"
-          live
+          live={live}
           value={
             <>
               {s.currentSpeed.toFixed(1)}
               <span className="text-[16px] font-medium text-[color:var(--fg-4)]"> mph</span>
             </>
           }
-          sub="+0.4 vs 2023 · seg avg 13.82"
-          subKind="emerald"
-          progress={68}
+          sub={
+            live
+              ? `last ping ${fmtPingAge(derived.lastGpsPingIso)} · ${derived.state}`
+              : "no ping yet · waiting for tracker"
+          }
+          subKind={live ? "emerald" : "amber"}
+          progress={Math.min(100, s.currentSpeed * 5)}
         />
         <StatCard
           eyebrow={nextTs ? `Next TS · ${nextTs.ts_num}` : "Next TS"}

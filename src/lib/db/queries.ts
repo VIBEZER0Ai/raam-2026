@@ -195,6 +195,87 @@ export interface PenaltyLedger {
   dq_risk_count: number;
 }
 
+export interface DbGpsPing {
+  id: number;
+  ts: string;
+  lat: number;
+  lng: number;
+  speed_mph: number | null;
+  heading: number | null;
+  source: string | null;
+  mile_from_start: number | null;
+  state: string | null;
+  device_id: string | null;
+  note: string | null;
+}
+
+export interface DerivedRaceState {
+  /** Most recent ping — source of truth for position + speed. */
+  latest: DbGpsPing | null;
+  /** Most recent N pings (newest first) for rolling averages. */
+  recent: DbGpsPing[];
+  /** Current mile from start, with fallback. */
+  currentMile: number;
+  /** Current speed mph, with fallback. */
+  currentSpeed: number;
+  /** ISO of latest ping (for GPS-silence rule). null = no ping ever. */
+  lastGpsPingIso: string | null;
+  /** State from latest ping, falls back to "CA" at start. */
+  state: string;
+  /** Recent speeds (newest first), padded with latest if sparse. */
+  recentSpeedsMph: number[];
+  /** Current TS number — derived by highest mile_total ≤ currentMile. */
+  currentTs: number;
+}
+
+export async function getRecentGpsPings(limit = 30): Promise<DbGpsPing[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("gps_ping")
+    .select("*")
+    .order("ts", { ascending: false })
+    .limit(limit);
+  if (error) {
+    console.error("[getRecentGpsPings]", error);
+    return [];
+  }
+  return (data ?? []) as DbGpsPing[];
+}
+
+export async function getDerivedRaceState(): Promise<DerivedRaceState> {
+  const [pings, stations] = await Promise.all([
+    getRecentGpsPings(60),
+    getTimeStations(),
+  ]);
+  const latest = pings[0] ?? null;
+  const currentMile = latest?.mile_from_start ?? 0;
+  const currentSpeed = latest?.speed_mph ?? 0;
+  const lastGpsPingIso = latest?.ts ?? null;
+  const state = latest?.state ?? "CA";
+  const recentSpeedsMph = pings
+    .map((p) => p.speed_mph)
+    .filter((s): s is number => s !== null);
+  // Resolve TS: highest ts_num whose mile_total ≤ currentMile
+  let currentTs = 0;
+  for (const ts of stations) {
+    if (Number(ts.mile_total) <= Number(currentMile)) {
+      currentTs = ts.ts_num;
+    } else {
+      break;
+    }
+  }
+  return {
+    latest,
+    recent: pings,
+    currentMile: Number(currentMile) || 0,
+    currentSpeed: Number(currentSpeed) || 0,
+    lastGpsPingIso,
+    state,
+    recentSpeedsMph,
+    currentTs,
+  };
+}
+
 export async function getPenaltyLedger(): Promise<PenaltyLedger> {
   const supabase = await createClient();
   const { data, error } = await supabase

@@ -21,3 +21,15 @@ export function elapsedSince(startIso: string): ReturnType<typeof fmtDHMS> {
   const ms = Math.max(0, Date.now() - new Date(startIso).getTime());
   return fmtDHMS(ms);
 }
+
+/** Short human age string: "12s", "3m", "42m", "1h 20m". */
+export function fmtPingAge(iso: string | null): string {
+  if (!iso) return "never";
+  const sec = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+  if (sec < 60) return `${sec}s`;
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m`;
+  const h = Math.floor(min / 60);
+  const rm = min % 60;
+  return rm === 0 ? `${h}h` : `${h}h ${rm}m`;
+}

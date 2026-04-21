@@ -23,6 +23,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentUser } from "@/lib/auth/session";
+import { milesFromStart } from "@/lib/raam/route-lookup";
 import { revalidatePath } from "next/cache";
 
 export async function POST(req: Request) {
@@ -62,9 +63,27 @@ export async function POST(req: Request) {
     );
   }
 
+  // Auto-derive mile_from_start from the polyline if caller didn't supply.
+  let mileFromStart: number | null =
+    typeof body.mile_from_start === "number" ? body.mile_from_start : null;
+  let deviationMi: number | null = null;
+  if (mileFromStart === null) {
+    const lookup = await milesFromStart({ lat, lng });
+    if (lookup) {
+      mileFromStart = lookup.mile_from_start;
+      deviationMi = lookup.deviation_mi;
+    }
+  }
+
   // When secret matches, use service-role client (bypasses RLS).
   // When user authenticated, normal SSR client (RLS enforces authenticated role).
   const supabase = secretMatch ? createAdminClient() : await createClient();
+  const noteWithDeviation =
+    typeof body.note === "string"
+      ? body.note
+      : deviationMi !== null && deviationMi > 2
+        ? `off-route ${deviationMi.toFixed(1)} mi`
+        : null;
   const { error, data } = await supabase
     .from("gps_ping")
     .insert({
@@ -73,15 +92,12 @@ export async function POST(req: Request) {
       speed_mph:
         typeof body.speed_mph === "number" ? body.speed_mph : null,
       heading: typeof body.heading === "number" ? body.heading : null,
-      mile_from_start:
-        typeof body.mile_from_start === "number"
-          ? body.mile_from_start
-          : null,
+      mile_from_start: mileFromStart,
       state: typeof body.state === "string" ? body.state : null,
       device_id:
         typeof body.device_id === "string" ? body.device_id : null,
       source: typeof body.source === "string" ? body.source : "manual",
-      note: typeof body.note === "string" ? body.note : null,
+      note: noteWithDeviation,
     })
     .select()
     .single();

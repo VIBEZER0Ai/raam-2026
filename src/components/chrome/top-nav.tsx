@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Bell, Moon, Sun } from "lucide-react";
+import { Bell, LogOut, Moon, Sun } from "lucide-react";
 import { RACE } from "@/lib/raam/race-config";
 import { useTick } from "@/lib/raam/use-tick";
 import { fmtDHMS, msDiff, elapsedSince, pad2 } from "@/lib/raam/format";
 import { ALERTS } from "@/lib/raam/mock-data";
+import { signOut } from "@/app/login/actions";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -23,7 +24,7 @@ const TABS = [
   { href: "/debrief",       label: "Debrief",      group: "lifecycle" },
 ];
 
-export function TopNav() {
+export function TopNav({ userEmail }: { userEmail?: string | null }) {
   useTick(1000);
   const pathname = usePathname();
   const [dark, setDark] = useState(true);
@@ -124,6 +125,20 @@ export function TopNav() {
           >
             SOS
           </button>
+          {userEmail && (
+            <form action={signOut}>
+              <button
+                type="submit"
+                title={`Signed in as ${userEmail} — click to sign out`}
+                className="flex h-9 items-center gap-2 rounded-lg border border-[color:var(--border)] bg-[color:var(--bg-elev)] px-3 text-[11px] font-bold text-[color:var(--fg-3)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--fg-1)]"
+              >
+                <span className="hidden max-w-[120px] truncate md:inline">
+                  {userEmail}
+                </span>
+                <LogOut className="h-3.5 w-3.5" />
+              </button>
+            </form>
+          )}
         </div>
       </div>
     </nav>

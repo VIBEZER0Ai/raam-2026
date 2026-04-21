@@ -21,6 +21,8 @@
 
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getCurrentUser } from "@/lib/auth/session";
 import { revalidatePath } from "next/cache";
 
 export async function POST(req: Request) {
@@ -46,7 +48,23 @@ export async function POST(req: Request) {
     );
   }
 
-  const supabase = await createClient();
+  // Auth gate — either valid Supabase session OR matching INGEST_SECRET header.
+  const headerSecret = req.headers.get("x-ingest-secret");
+  const expectedSecret = process.env.INGEST_SECRET;
+  const secretMatch =
+    !!expectedSecret && !!headerSecret && headerSecret === expectedSecret;
+
+  const user = secretMatch ? null : await getCurrentUser();
+  if (!secretMatch && !user) {
+    return NextResponse.json(
+      { error: "Sign in required, or set x-ingest-secret header." },
+      { status: 401 },
+    );
+  }
+
+  // When secret matches, use service-role client (bypasses RLS).
+  // When user authenticated, normal SSR client (RLS enforces authenticated role).
+  const supabase = secretMatch ? createAdminClient() : await createClient();
   const { error, data } = await supabase
     .from("gps_ping")
     .insert({

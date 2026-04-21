@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { TopNav } from "@/components/chrome/top-nav";
 import { FooterBar } from "@/components/chrome/footer-bar";
+import { getCurrentUser } from "@/lib/auth/session";
 import "./globals.css";
 
 const inter = Inter({
@@ -26,11 +27,12 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const user = await getCurrentUser();
   return (
     <html lang="en" className={`${inter.variable} ${jetbrains.variable} h-full`}>
       <body
@@ -40,7 +42,7 @@ export default function RootLayout({
         }}
       >
         <div className="flex min-h-screen flex-col">
-          <TopNav />
+          <TopNav userEmail={user?.email ?? null} />
           <main className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-4 px-5 pb-[120px] pt-4">
             {children}
           </main>

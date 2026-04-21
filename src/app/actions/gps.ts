@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth/session";
 
 export interface ManualPingInput {
   lat: number;
@@ -25,6 +26,8 @@ export async function manualPing(
   ) {
     return { ok: false, error: "lat/lng outside RAAM bounds" };
   }
+  const user = await getCurrentUser();
+  if (!user) return { ok: false, error: "Sign in required." };
   const supabase = await createClient();
   const { error } = await supabase.from("gps_ping").insert({
     lat: input.lat,

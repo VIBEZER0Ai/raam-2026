@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth/session";
 
 export interface LogPenaltyInput {
   kind: "warning" | "penalty_1h" | "dq";
@@ -14,6 +15,8 @@ export interface LogPenaltyInput {
 export async function logPenalty(
   input: LogPenaltyInput,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  const user = await getCurrentUser();
+  if (!user) return { ok: false, error: "Sign in required." };
   const supabase = await createClient();
   const { error } = await supabase.from("penalty").insert({
     kind: input.kind,
@@ -34,6 +37,8 @@ export async function logPenalty(
 export async function resolvePenalty(
   id: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  const user = await getCurrentUser();
+  if (!user) return { ok: false, error: "Sign in required." };
   const supabase = await createClient();
   const { error } = await supabase
     .from("penalty")

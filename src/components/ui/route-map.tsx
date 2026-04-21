@@ -19,6 +19,8 @@ export interface RouteMapProps {
   mapStyle?: string;
   /** CSS className for container wrapper. */
   className?: string;
+  /** Path to GeoJSON LineString. Default: /raam/route.geojson. */
+  routeGeoJsonUrl?: string;
 }
 
 export function RouteMap({
@@ -29,6 +31,7 @@ export function RouteMap({
   fitRoute = true,
   mapStyle = "mapbox://styles/mapbox/dark-v11",
   className,
+  routeGeoJsonUrl = "/raam/route.geojson",
 }: RouteMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -73,18 +76,31 @@ export function RouteMap({
       "top-right",
     );
 
-    map.on("load", () => {
-      // Route line
-      map.addSource("raam-route", {
-        type: "geojson",
-        data: {
+    map.on("load", async () => {
+      // Try real GPX-derived polyline first; fall back to straight lines between TS.
+      let routeData:
+        | GeoJSON.Feature<GeoJSON.LineString>
+        | GeoJSON.FeatureCollection<GeoJSON.LineString>;
+      try {
+        const res = await fetch(routeGeoJsonUrl);
+        if (res.ok) {
+          routeData = (await res.json()) as typeof routeData;
+        } else {
+          throw new Error(`status ${res.status}`);
+        }
+      } catch {
+        routeData = {
           type: "Feature",
           properties: {},
           geometry: {
             type: "LineString",
             coordinates: geo.map((g) => [g.lng, g.lat]),
           },
-        },
+        };
+      }
+      map.addSource("raam-route", {
+        type: "geojson",
+        data: routeData,
       });
 
       // Glow underlay

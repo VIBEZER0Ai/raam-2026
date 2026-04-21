@@ -24,6 +24,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentUser } from "@/lib/auth/session";
 import { milesFromStart } from "@/lib/raam/route-lookup";
+import { snapPoint } from "@/lib/raam/map-match";
 import { revalidatePath } from "next/cache";
 
 export async function POST(req: Request) {
@@ -78,6 +79,38 @@ export async function POST(req: Request) {
   // When secret matches, use service-role client (bypasses RLS).
   // When user authenticated, normal SSR client (RLS enforces authenticated role).
   const supabase = secretMatch ? createAdminClient() : await createClient();
+
+  // Map Matching — snap raw GPS to road geometry using the previous ping.
+  // Skipped when no prior ping exists (bootstrap), or when it's > 30 min old
+  // (stale pairing produces bad matches across gaps).
+  let matchedLat: number | null = null;
+  let matchedLng: number | null = null;
+  let matchConfidence: number | null = null;
+  try {
+    const { data: prior } = await supabase
+      .from("gps_ping")
+      .select("lat,lng,ts")
+      .order("ts", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (prior) {
+      const priorAgeMs = Date.now() - new Date(prior.ts).getTime();
+      if (priorAgeMs < 30 * 60_000) {
+        const snapped = await snapPoint(
+          { lat: Number(prior.lat), lng: Number(prior.lng) },
+          { lat, lng },
+        );
+        if (snapped) {
+          matchedLat = Number(snapped.lat.toFixed(7));
+          matchedLng = Number(snapped.lng.toFixed(7));
+          matchConfidence = Number(snapped.confidence.toFixed(3));
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("[POST /api/gps/ping map-match]", e);
+  }
+
   const noteWithDeviation =
     typeof body.note === "string"
       ? body.note
@@ -98,6 +131,9 @@ export async function POST(req: Request) {
         typeof body.device_id === "string" ? body.device_id : null,
       source: typeof body.source === "string" ? body.source : "manual",
       note: noteWithDeviation,
+      matched_lat: matchedLat,
+      matched_lng: matchedLng,
+      match_confidence: matchConfidence,
     })
     .select()
     .single();

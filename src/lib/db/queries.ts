@@ -246,6 +246,9 @@ export interface DbGpsPing {
   state: string | null;
   device_id: string | null;
   note: string | null;
+  matched_lat: number | null;
+  matched_lng: number | null;
+  match_confidence: number | null;
 }
 
 export interface DerivedRaceState {

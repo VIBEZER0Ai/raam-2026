@@ -303,13 +303,19 @@ export function WarRoom({ stations, targets, derived }: WarRoomProps) {
           stations={stations}
           currentTs={s.currentTs}
           current={
-            derived.latest &&
-            derived.latest.lat !== null &&
-            derived.latest.lng !== null
-              ? {
-                  lat: Number(derived.latest.lat),
-                  lng: Number(derived.latest.lng),
-                }
+            derived.latest
+              ? derived.latest.matched_lat !== null &&
+                derived.latest.matched_lng !== null
+                ? {
+                    lat: Number(derived.latest.matched_lat),
+                    lng: Number(derived.latest.matched_lng),
+                  }
+                : derived.latest.lat !== null && derived.latest.lng !== null
+                  ? {
+                      lat: Number(derived.latest.lat),
+                      lng: Number(derived.latest.lng),
+                    }
+                  : null
               : null
           }
           height={360}

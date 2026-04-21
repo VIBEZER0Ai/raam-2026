@@ -8,13 +8,21 @@ export default async function SpectatorPage() {
     getTimeStations(),
     getDerivedRaceState(),
   ]);
-  const current =
-    derived.latest && derived.latest.lat !== null && derived.latest.lng !== null
+  // Prefer road-snapped coords when available; fall back to raw GPS.
+  const current = derived.latest
+    ? derived.latest.matched_lat !== null &&
+      derived.latest.matched_lng !== null
       ? {
-          lat: Number(derived.latest.lat),
-          lng: Number(derived.latest.lng),
+          lat: Number(derived.latest.matched_lat),
+          lng: Number(derived.latest.matched_lng),
         }
-      : null;
+      : derived.latest.lat !== null && derived.latest.lng !== null
+        ? {
+            lat: Number(derived.latest.lat),
+            lng: Number(derived.latest.lng),
+          }
+        : null
+    : null;
   return (
     <Spectator
       stations={stations}

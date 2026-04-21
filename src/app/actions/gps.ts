@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { milesFromStart } from "@/lib/raam/route-lookup";
+import { snapPoint } from "@/lib/raam/map-match";
 
 export interface ManualPingInput {
   lat: number;
@@ -44,6 +45,36 @@ export async function manualPing(
   }
 
   const supabase = await createClient();
+
+  // Map-match against last ping (≤30 min old) to snap to road.
+  let matchedLat: number | null = null;
+  let matchedLng: number | null = null;
+  let matchConfidence: number | null = null;
+  try {
+    const { data: prior } = await supabase
+      .from("gps_ping")
+      .select("lat,lng,ts")
+      .order("ts", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (prior) {
+      const ageMs = Date.now() - new Date(prior.ts).getTime();
+      if (ageMs < 30 * 60_000) {
+        const snapped = await snapPoint(
+          { lat: Number(prior.lat), lng: Number(prior.lng) },
+          { lat: input.lat, lng: input.lng },
+        );
+        if (snapped) {
+          matchedLat = Number(snapped.lat.toFixed(7));
+          matchedLng = Number(snapped.lng.toFixed(7));
+          matchConfidence = Number(snapped.confidence.toFixed(3));
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("[manualPing map-match]", e);
+  }
+
   const { error } = await supabase.from("gps_ping").insert({
     lat: input.lat,
     lng: input.lng,
@@ -52,6 +83,9 @@ export async function manualPing(
     state: input.state ?? null,
     source: "manual",
     note: input.note ? `${input.note}${noteSuffix}` : noteSuffix || null,
+    matched_lat: matchedLat,
+    matched_lng: matchedLng,
+    match_confidence: matchConfidence,
   });
   if (error) return { ok: false, error: error.message };
   revalidatePath("/");

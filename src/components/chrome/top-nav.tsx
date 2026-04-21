@@ -9,6 +9,7 @@ import { useTick } from "@/lib/raam/use-tick";
 import { fmtDHMS, msDiff, elapsedSince, pad2 } from "@/lib/raam/format";
 import { ALERTS } from "@/lib/raam/mock-data";
 import { signOut } from "@/app/login/actions";
+import { SosButton } from "@/components/chrome/sos-button";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -120,12 +121,7 @@ export function TopNav({ userEmail }: { userEmail?: string | null }) {
           >
             {dark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
           </button>
-          <button
-            type="button"
-            className="h-9 rounded-lg border-0 bg-red-500 px-3.5 text-[12px] font-extrabold tracking-[0.12em] text-white shadow-[0_0_0_2px_rgba(239,68,68,0.3)]"
-          >
-            SOS
-          </button>
+          <SosButton />
           {userEmail && (
             <form action={signOut}>
               <button

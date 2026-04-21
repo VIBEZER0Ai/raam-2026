@@ -164,6 +164,32 @@ export interface DbRule {
   sort_order: number;
 }
 
+export interface DbCommsLog {
+  id: number;
+  ts: string;
+  channel: string;
+  direction: "in" | "out";
+  from_party: string | null;
+  to_party: string | null;
+  subject: string | null;
+  body: string | null;
+  crew_id: string | null;
+}
+
+export async function getRecentComms(limit = 50): Promise<DbCommsLog[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("comms_log")
+    .select("*")
+    .order("ts", { ascending: false })
+    .limit(limit);
+  if (error) {
+    console.error("[getRecentComms]", error);
+    return [];
+  }
+  return (data ?? []) as DbCommsLog[];
+}
+
 export interface DbCrewMember {
   id: string;
   auth_user_id: string | null;

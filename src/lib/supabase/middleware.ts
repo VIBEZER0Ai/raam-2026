@@ -14,6 +14,7 @@ const PUBLIC_PREFIXES = [
   "/auth",
   "/spectator",
   "/api/gps/ping",
+  "/api/discord/inbound",
   "/_next",
   "/raam",
   "/favicon",

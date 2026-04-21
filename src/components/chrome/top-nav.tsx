@@ -18,6 +18,7 @@ const TABS = [
   { href: "/nutrition",     label: "Nutrition",    group: "live" },
   { href: "/weather",       label: "Weather",      group: "live" },
   { href: "/compliance",    label: "Compliance",   group: "live" },
+  { href: "/comms",         label: "Comms",        group: "live" },
   { href: "/pre-race",      label: "Pre-race",     group: "lifecycle" },
   { href: "/spectator",     label: "Spectator",    group: "lifecycle" },
   { href: "/admin",         label: "Admin",        group: "lifecycle" },

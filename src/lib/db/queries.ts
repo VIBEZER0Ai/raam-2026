@@ -164,6 +164,91 @@ export interface DbRule {
   sort_order: number;
 }
 
+export interface DbRestLog {
+  id: string;
+  started_at: string;
+  ended_at: string | null;
+  duration_min: number | null;
+  location: string | null;
+  whoop_recovery: number | null;
+  notes: string | null;
+  logged_by: string | null;
+}
+
+export interface AwakeStatus {
+  /** Latest rest row (open or closed), or null if none yet. */
+  latest: DbRestLog | null;
+  /** Open block (ended_at IS NULL) — rider currently sleeping. */
+  open: DbRestLog | null;
+  /** Hours since the most recent rest block ended. 0 if currently sleeping. */
+  awakeHours: number;
+  /** Last recorded recovery % (from rest_log.whoop_recovery). null = unknown. */
+  recoveryPct: number | null;
+  /** Shermer product: awakeHours × (100 - recovery). null if recovery unknown. */
+  shermerScore: number | null;
+  /** Risk tier per strategy thresholds (1200/1500). */
+  shermerRisk: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" | "UNKNOWN";
+}
+
+export async function getRecentRestLogs(limit = 20): Promise<DbRestLog[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("rest_log")
+    .select("*")
+    .order("started_at", { ascending: false })
+    .limit(limit);
+  if (error) {
+    console.error("[getRecentRestLogs]", error);
+    return [];
+  }
+  return (data ?? []) as DbRestLog[];
+}
+
+export async function getAwakeStatus(): Promise<AwakeStatus> {
+  const rows = await getRecentRestLogs(10);
+  if (rows.length === 0) {
+    return {
+      latest: null,
+      open: null,
+      awakeHours: 0,
+      recoveryPct: null,
+      shermerScore: null,
+      shermerRisk: "UNKNOWN",
+    };
+  }
+  const latest = rows[0];
+  const open = rows.find((r) => r.ended_at === null) ?? null;
+  const lastEnded = rows.find((r) => r.ended_at !== null) ?? null;
+  const awakeMs = open
+    ? 0
+    : lastEnded
+      ? Math.max(0, Date.now() - new Date(lastEnded.ended_at!).getTime())
+      : 0;
+  const awakeHours = Number((awakeMs / 3_600_000).toFixed(1));
+  const recoveryRow = rows.find((r) => r.whoop_recovery !== null);
+  const recoveryPct = recoveryRow?.whoop_recovery ?? null;
+  const shermerScore =
+    recoveryPct !== null ? awakeHours * (100 - recoveryPct) : null;
+  const shermerRisk: AwakeStatus["shermerRisk"] =
+    shermerScore === null
+      ? "UNKNOWN"
+      : shermerScore > 1500
+        ? "CRITICAL"
+        : shermerScore > 1200
+          ? "HIGH"
+          : shermerScore > 800
+            ? "MEDIUM"
+            : "LOW";
+  return {
+    latest,
+    open,
+    awakeHours,
+    recoveryPct,
+    shermerScore,
+    shermerRisk,
+  };
+}
+
 export interface DbCommsLog {
   id: number;
   ts: string;

@@ -1,4 +1,9 @@
-import { getRules, getPenaltyLedger } from "@/lib/db/queries";
+import {
+  getRules,
+  getPenaltyLedger,
+  getAwakeStatus,
+  getDerivedRaceState,
+} from "@/lib/db/queries";
 import {
   evaluateRules,
   isNight,
@@ -41,13 +46,31 @@ const SEV_PILL: Record<string, PillKind> = {
 };
 
 export async function Compliance() {
-  const [rules, ledger] = await Promise.all([getRules(), getPenaltyLedger()]);
+  const [rules, ledger, awake, derived] = await Promise.all([
+    getRules(),
+    getPenaltyLedger(),
+    getAwakeStatus(),
+    getDerivedRaceState(),
+  ]);
 
-  // Context now uses real penalty count from DB. Other fields stay mock
-  // until gps_ping, shifts, nutrition_log, rest_log feeds come online.
+  // Rule context now sourced from DB where available.
+  // Still mock: visibility, speed trace, follow-distance (needs tracker integrations).
+  const nowUtc = new Date();
+  const mock = buildMockContext();
   const ctx: RuleContext = {
-    ...buildMockContext(),
+    ...mock,
+    nowUtc,
     penaltyCount: ledger.dq_risk_count,
+    awakeHours: awake.awakeHours,
+    recoveryPct: awake.recoveryPct,
+    currentMile: derived.currentMile || mock.currentMile,
+    currentSpeed: derived.currentSpeed || mock.currentSpeed,
+    state: derived.state || mock.state,
+    lastGpsPingIso: derived.lastGpsPingIso ?? mock.lastGpsPingIso,
+    recentSpeedsMph:
+      derived.recentSpeedsMph.length > 0
+        ? derived.recentSpeedsMph
+        : mock.recentSpeedsMph,
   };
   const night = isNight(ctx);
   const activeEvals = evaluateRules(ctx);

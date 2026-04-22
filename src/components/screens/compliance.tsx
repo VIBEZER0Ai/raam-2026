@@ -13,6 +13,7 @@ import {
 import { Card, CardHead, CardBody } from "@/components/ui/card";
 import { Pill, type PillKind } from "@/components/ui/pill";
 import { PenaltyLogForm } from "@/components/ui/penalty-log-form";
+import { RunEngineButton } from "@/components/ui/run-engine-button";
 import { cn } from "@/lib/utils";
 
 const CATEGORY_LABEL: Record<string, string> = {
@@ -238,6 +239,21 @@ export async function Compliance() {
           </div>
         </Card>
       </div>
+
+      {/* Run engine manually + Discord dispatch */}
+      <Card>
+        <CardHead
+          left="Engine runner"
+          right={<span className="font-mono">fires on GPS ping + sleep events</span>}
+        />
+        <CardBody className="flex flex-col gap-2">
+          <RunEngineButton />
+          <div className="text-[11px] text-[color:var(--fg-4)]">
+            Dedupes within 15 min per rule. Critical + violations auto-post
+            to Discord webhook when DISCORD_WEBHOOK_URL is set.
+          </div>
+        </CardBody>
+      </Card>
 
       {/* Live evaluations */}
       {activeEvals.length > 0 && (

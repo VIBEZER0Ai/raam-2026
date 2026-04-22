@@ -25,6 +25,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentUser } from "@/lib/auth/session";
 import { milesFromStart } from "@/lib/raam/route-lookup";
 import { snapPoint } from "@/lib/raam/map-match";
+import { runRuleEngine } from "@/lib/raam/rule-runner";
 import { revalidatePath } from "next/cache";
 
 export async function POST(req: Request) {
@@ -147,7 +148,16 @@ export async function POST(req: Request) {
   revalidatePath("/compliance");
   revalidatePath("/crew");
 
-  return NextResponse.json({ ok: true, ping: data }, { status: 201 });
+  // Fire the rule engine on the fresh context. Non-fatal — ping is already stored.
+  // The runner dedupes against recent evaluations, so rapid pings don't spam Discord.
+  let engine: Awaited<ReturnType<typeof runRuleEngine>> | null = null;
+  try {
+    engine = await runRuleEngine();
+  } catch (e) {
+    console.warn("[POST /api/gps/ping rule-runner]", e);
+  }
+
+  return NextResponse.json({ ok: true, ping: data, engine }, { status: 201 });
 }
 
 export async function GET() {

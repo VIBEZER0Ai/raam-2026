@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/session";
+import { runRuleEngine } from "@/lib/raam/rule-runner";
 
 export interface StartSleepInput {
   location?: string;
@@ -68,6 +69,7 @@ export async function startSleep(input: StartSleepInput = {}): Promise<Result> {
   revalidatePath("/sleep");
   revalidatePath("/");
   revalidatePath("/compliance");
+  runRuleEngine().catch((e) => console.warn("[rest.runRuleEngine]", e));
   return { ok: true, id: data.id as string };
 }
 
@@ -95,6 +97,7 @@ export async function endSleep(input: EndSleepInput): Promise<Result> {
   revalidatePath("/sleep");
   revalidatePath("/");
   revalidatePath("/compliance");
+  runRuleEngine().catch((e) => console.warn("[rest.runRuleEngine]", e));
   return { ok: true, id: input.rest_id };
 }
 
@@ -145,5 +148,6 @@ export async function logRecovery(input: RecoveryInput): Promise<Result> {
   if (error) return { ok: false, error: error.message };
   revalidatePath("/sleep");
   revalidatePath("/compliance");
+  runRuleEngine().catch((e) => console.warn("[rest.runRuleEngine]", e));
   return { ok: true, id: data.id as string };
 }

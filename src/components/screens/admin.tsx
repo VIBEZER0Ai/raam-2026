@@ -39,9 +39,12 @@ export function Admin({ tab = "members", crew = [] }: AdminProps) {
         <button className="rounded-lg border border-[color:var(--border)] bg-transparent px-4 py-2 text-[13px] font-bold">
           Spectator: Private
         </button>
-        <button className="rounded-lg bg-[color:var(--strava-orange)] px-4 py-2 text-[13px] font-bold text-white">
-          + Invite
-        </button>
+        <a
+          href="/admin/roster"
+          className="rounded-lg bg-[color:var(--strava-orange)] px-4 py-2 text-[13px] font-bold text-white"
+        >
+          Edit roster →
+        </a>
       </div>
 
       <div className="flex border-b border-[color:var(--border)] bg-[color:var(--bg-elev)] px-8">

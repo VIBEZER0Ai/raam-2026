@@ -383,13 +383,18 @@ export interface DbCrewMember {
   created_at: string;
 }
 
-export async function getCrewMembers(): Promise<DbCrewMember[]> {
+export async function getCrewMembers(
+  opts: { includeInactive?: boolean } = {},
+): Promise<DbCrewMember[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  let q = supabase
     .from("crew_member")
     .select("*")
-    .eq("active", true)
     .order("full_name", { ascending: true });
+  if (!opts.includeInactive) {
+    q = q.eq("active", true);
+  }
+  const { data, error } = await q;
   if (error) {
     console.error("[getCrewMembers]", error);
     return [];

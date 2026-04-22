@@ -1,0 +1,33 @@
+name: Run rule engine every 5 minutes
+
+# GitHub Actions free tier fallback for the rule-engine cron when Vercel
+# Hobby plan (daily-only crons) isn't upgraded to Pro.
+# Enable by setting the CRON_SECRET repo secret in GitHub → Settings →
+# Secrets and variables → Actions.
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hit /api/cron/engine
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::warning::CRON_SECRET secret not set — engine cron disabled"
+            exit 0
+          fi
+          code=$(curl -s -o /tmp/out.txt -w "%{http_code}" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            https://raam-2026.vercel.app/api/cron/engine)
+          echo "HTTP $code"
+          head -c 4000 /tmp/out.txt || true
+          test "$code" = "200"

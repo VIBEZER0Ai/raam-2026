@@ -164,6 +164,91 @@ export interface DbRule {
   sort_order: number;
 }
 
+export interface DbNutritionLog {
+  id: string;
+  logged_at: string;
+  carbs_g: number | null;
+  water_ml: number | null;
+  sodium_mg: number | null;
+  caffeine_mg: number | null;
+  calories_kcal: number | null;
+  notes: string | null;
+  logged_by: string | null;
+}
+
+export interface NutritionRollup {
+  hourly: {
+    carbs_g: number;
+    water_ml: number;
+    sodium_mg: number;
+    caffeine_mg: number;
+    calories_kcal: number;
+  };
+  three_hour: {
+    carbs_g: number;
+    water_ml: number;
+    sodium_mg: number;
+    caffeine_mg: number;
+    calories_kcal: number;
+    entry_count: number;
+  };
+}
+
+export async function getRecentNutrition(
+  limit = 30,
+): Promise<DbNutritionLog[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("nutrition_log")
+    .select("*")
+    .order("logged_at", { ascending: false })
+    .limit(limit);
+  if (error) {
+    console.error("[getRecentNutrition]", error);
+    return [];
+  }
+  return (data ?? []) as DbNutritionLog[];
+}
+
+export async function getNutritionRollup(): Promise<NutritionRollup> {
+  const supabase = await createClient();
+  const threeHrAgo = new Date(Date.now() - 3 * 3_600_000).toISOString();
+  const { data } = await supabase
+    .from("nutrition_log")
+    .select("logged_at,carbs_g,water_ml,sodium_mg,caffeine_mg,calories_kcal")
+    .gt("logged_at", threeHrAgo);
+  const rows = (data ?? []) as Pick<
+    DbNutritionLog,
+    | "logged_at"
+    | "carbs_g"
+    | "water_ml"
+    | "sodium_mg"
+    | "caffeine_mg"
+    | "calories_kcal"
+  >[];
+
+  const oneHrAgoMs = Date.now() - 3_600_000;
+  const hourly = { carbs_g: 0, water_ml: 0, sodium_mg: 0, caffeine_mg: 0, calories_kcal: 0 };
+  const three_hour = { carbs_g: 0, water_ml: 0, sodium_mg: 0, caffeine_mg: 0, calories_kcal: 0, entry_count: 0 };
+  for (const r of rows) {
+    const ts = new Date(r.logged_at).getTime();
+    const inHour = ts >= oneHrAgoMs;
+    three_hour.entry_count += 1;
+    for (const k of [
+      "carbs_g",
+      "water_ml",
+      "sodium_mg",
+      "caffeine_mg",
+      "calories_kcal",
+    ] as const) {
+      const v = Number(r[k] ?? 0);
+      three_hour[k] += v;
+      if (inHour) hourly[k] += v;
+    }
+  }
+  return { hourly, three_hour };
+}
+
 export interface DbRestLog {
   id: string;
   started_at: string;

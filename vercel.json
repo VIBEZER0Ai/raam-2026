@@ -1,9 +1,17 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "crons": [
-    {
-      "path": "/api/cron/engine",
-      "schedule": "*/5 * * * *"
-    }
-  ]
+  "_cron_notes": [
+    "Vercel Hobby allows only daily crons. Upgrade to Pro to enable the",
+    "cron entry below (schedule */5 * * * *).",
+    "Until then GitHub Actions (.github/workflows/cron-engine.yml) pings",
+    "/api/cron/engine every 5 minutes from ubuntu-latest — free tier OK."
+  ],
+  "_cron_pro_enable": {
+    "crons": [
+      {
+        "path": "/api/cron/engine",
+        "schedule": "*/5 * * * *"
+      }
+    ]
+  }
 }

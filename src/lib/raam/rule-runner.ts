@@ -92,17 +92,27 @@ export async function runRuleEngine(): Promise<RunnerSummary> {
   const cutoff = new Date(Date.now() - DEDUP_WINDOW_MS).toISOString();
 
   for (const ev of evaluations) {
-    // Dedup: same code, status, fired in last 15 min, not resolved
+    // Dedup against same rule_code firings in last 15 min — but allow
+    // severity/status escalation through. The key stored in context.status
+    // distinguishes warn vs triggered vs violation, so we match on both.
     const { data: recent } = await admin
       .from("rule_evaluation")
-      .select("id,status")
+      .select("id,context")
       .eq("rule_code", ev.code)
       .gt("fired_at", cutoff)
       .neq("status", "resolved")
-      .limit(1)
-      .maybeSingle();
+      .limit(5);
 
-    if (recent) {
+    const sameStatusExists = Array.isArray(recent)
+      ? recent.some(
+          (r: { context: unknown }) =>
+            typeof r.context === "object" &&
+            r.context !== null &&
+            (r.context as { status?: string }).status === ev.status,
+        )
+      : false;
+
+    if (sameStatusExists) {
       summary.dedup_skipped += 1;
       continue;
     }

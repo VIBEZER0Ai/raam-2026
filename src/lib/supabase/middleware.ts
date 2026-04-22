@@ -16,6 +16,7 @@ const PUBLIC_PREFIXES = [
   "/api/gps/ping",
   "/api/discord/inbound",
   "/api/cron",
+  "/api/whoop/callback",
   "/_next",
   "/raam",
   "/favicon",

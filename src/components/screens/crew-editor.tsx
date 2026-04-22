@@ -328,6 +328,25 @@ function EditForm({
         />
       </Field>
 
+      {(member.role === "rider" || member.role === "crew_chief") && (
+        <div className="rounded-lg border border-[color:var(--border)] bg-[color:var(--bg-elev)] p-3">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[color:var(--fg-4)]">
+            Whoop
+          </div>
+          <div className="mt-1 flex items-center gap-2.5">
+            <a
+              href={`/api/whoop/connect?crew_member_id=${member.id}`}
+              className="rounded-lg bg-[#00d6a3] px-3 py-1.5 text-[11px] font-extrabold text-[#0a1c15]"
+            >
+              Connect Whoop →
+            </a>
+            <span className="text-[11px] text-[color:var(--fg-4)]">
+              pulls recovery + sleep every 30 min
+            </span>
+          </div>
+        </div>
+      )}
+
       {err && (
         <div className="rounded-lg border border-red-900/50 bg-red-500/10 p-2 text-[12px] text-red-300">
           {err}

@@ -11,7 +11,8 @@
     "migrate:status": "tsx scripts/migrate.ts status",
     "migrate:reset": "tsx scripts/migrate.ts reset",
     "migrate:mark": "tsx scripts/migrate.ts mark",
-    "parse-gpx": "tsx scripts/parse-gpx.ts"
+    "parse-gpx": "tsx scripts/parse-gpx.ts",
+    "simulate:gps": "tsx scripts/simulate-gps.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.2",

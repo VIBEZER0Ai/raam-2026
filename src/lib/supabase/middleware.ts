@@ -17,6 +17,8 @@ const PUBLIC_PREFIXES = [
   "/api/discord/inbound",
   "/api/cron",
   "/api/whoop/callback",
+  "/privacy",
+  "/terms",
   "/_next",
   "/raam",
   "/favicon",

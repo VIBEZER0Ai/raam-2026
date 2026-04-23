@@ -58,8 +58,83 @@
   --fg-3: #52525b;
   --fg-4: #71717a;
   --fg-5: #a1a1aa;
+
+  /* Brighter brand tones would wash out on white — darken slightly */
+  --amber-400:   #b45309;
+  --emerald-400: #047857;
+  --red-400:     #b91c1c;
+  --red-500:     #dc2626;
+  --orange-400:  #c2410c;
+  --indigo-400:  #4338ca;
+  --blue-400:    #1d4ed8;
+  --pink-400:    #be185d;
+
   color-scheme: light;
 }
+
+/* ==========================================================
+   Light-mode Tailwind overrides
+   Dark-mode pale palette (text-red-300, text-amber-200, etc.)
+   becomes invisible on white. Remap to darker shades that meet
+   WCAG AA contrast against white/fafafa backgrounds.
+   ========================================================== */
+:root.light .text-emerald-200 { color: #065f46; }
+:root.light .text-emerald-300 { color: #047857; }
+:root.light .text-emerald-400 { color: #047857; }
+:root.light .text-red-200     { color: #991b1b; }
+:root.light .text-red-300     { color: #b91c1c; }
+:root.light .text-red-400     { color: #b91c1c; }
+:root.light .text-amber-200   { color: #78350f; }
+:root.light .text-amber-300   { color: #92400e; }
+:root.light .text-amber-400   { color: #b45309; }
+:root.light .text-orange-200  { color: #7c2d12; }
+:root.light .text-orange-400  { color: #c2410c; }
+:root.light .text-indigo-200  { color: #312e81; }
+:root.light .text-indigo-400  { color: #4338ca; }
+:root.light .text-blue-400    { color: #1d4ed8; }
+:root.light .text-zinc-400    { color: #52525b; }
+:root.light .text-zinc-300    { color: #3f3f46; }
+
+/* Semi-transparent alert boxes: dark-assumed /10 bg becomes a
+   too-pale tint on white. Bump opacity slightly so they read. */
+:root.light .bg-red-500\/10,
+:root.light .bg-red-500\/12     { background-color: rgba(220, 38, 38, 0.10); }
+:root.light .bg-red-500\/15     { background-color: rgba(220, 38, 38, 0.14); }
+:root.light .bg-emerald-500\/10 { background-color: rgba(16, 185, 129, 0.12); }
+:root.light .bg-emerald-500\/12,
+:root.light .bg-emerald-500\/15 { background-color: rgba(16, 185, 129, 0.16); }
+:root.light .bg-amber-400\/10,
+:root.light .bg-amber-500\/10,
+:root.light .bg-amber-500\/8    { background-color: rgba(245, 158, 11, 0.14); }
+:root.light .bg-amber-400\/15,
+:root.light .bg-amber-500\/15   { background-color: rgba(245, 158, 11, 0.18); }
+:root.light .bg-orange-400\/10,
+:root.light .bg-orange-400\/15,
+:root.light .bg-orange-500\/15  { background-color: rgba(249, 115, 22, 0.14); }
+:root.light .bg-indigo-400\/10,
+:root.light .bg-indigo-500\/10,
+:root.light .bg-indigo-500\/12,
+:root.light .bg-indigo-500\/15  { background-color: rgba(99, 102, 241, 0.14); }
+:root.light .bg-blue-500\/15    { background-color: rgba(59, 130, 246, 0.14); }
+:root.light .bg-zinc-500\/15    { background-color: rgba(113, 113, 122, 0.12); }
+
+/* Dark-mode ring borders assume dark bg. Lighten for light. */
+:root.light [class*="border-red-900"]     { border-color: rgba(185, 28, 28, 0.30); }
+:root.light [class*="border-emerald-900"] { border-color: rgba(5, 150, 105, 0.30); }
+:root.light [class*="border-amber-900"]   { border-color: rgba(180, 83, 9, 0.30); }
+:root.light [class*="border-indigo-900"]  { border-color: rgba(67, 56, 202, 0.30); }
+:root.light [class*="border-orange-900"]  { border-color: rgba(194, 65, 12, 0.30); }
+:root.light [class*="border-zinc-800"]    { border-color: rgba(63, 63, 70, 0.30); }
+
+/* white/opacity text reads as invisible on white bg */
+:root.light .text-white\/40 { color: rgba(9, 9, 11, 0.50); }
+:root.light .text-white\/60 { color: rgba(9, 9, 11, 0.70); }
+:root.light .text-white\/80 { color: rgba(9, 9, 11, 0.85); }
+
+/* Dark scrollbars would look wrong on light theme */
+:root.light ::-webkit-scrollbar-track { background: #f4f4f5; }
+:root.light ::-webkit-scrollbar-thumb { background: #d4d4d8; }
+:root.light ::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }
 
 :root.night {
   --bg:            #030308;

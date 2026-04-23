@@ -58,7 +58,10 @@ export function TopNav({ userEmail }: { userEmail?: string | null }) {
       <div className="mx-auto flex min-h-[60px] max-w-[1440px] items-center gap-4 px-5 py-2.5">
         <Link href="/" className="flex items-center gap-2.5 font-bold">
           <span className="block h-[22px] w-1 bg-[color:var(--strava-orange)]" />
-          <span className="text-[13px] tracking-[0.02em]">TEAM KABIR</span>
+          <span className="text-[13px] tracking-[0.04em]">VENTOR</span>
+          <span className="hidden text-[11px] font-semibold text-[color:var(--fg-4)] sm:inline">
+            · Team Kabir
+          </span>
           <span className="font-mono text-[13px] font-bold text-[color:var(--strava-orange)]">
             #{RACE.racer.number}
           </span>

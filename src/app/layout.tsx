@@ -16,13 +16,13 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Team Kabir · RAAM 2026 C&C",
+  title: "Ventor · endurance team operations",
   description:
-    "Race Across America 2026 Command & Control for Coach Kabir Rachure (#610, Solo Men). Oceanside → Atlantic City · 3,068 mi · 54 Time Stations.",
+    "Command & Control for ultra-endurance teams and solo athletes — cycling, running, triathlon, bikepacking. Live tracking, rule engine, crew coordination.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "RAAM 2026",
+    title: "Ventor",
     statusBarStyle: "black-translucent",
   },
 };

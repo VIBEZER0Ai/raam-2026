@@ -5,7 +5,6 @@ import { fmtDHMS, fmtPingAge, msDiff, pad2 } from "@/lib/raam/format";
 import { RACE } from "@/lib/raam/race-config";
 import {
   ALERTS,
-  CREW,
   RACE_STATE,
   WEATHER_NOW,
 } from "@/lib/raam/mock-data";
@@ -13,6 +12,7 @@ import type {
   DbTimeStation,
   DbTargetPlan,
   DerivedRaceState,
+  DbCrewMember,
 } from "@/lib/db/queries";
 import { AlertBanner } from "@/components/chrome/alert-banner";
 import { Card, CardBody, CardHead } from "@/components/ui/card";
@@ -27,9 +27,21 @@ export interface WarRoomProps {
   stations: DbTimeStation[];
   targets: DbTargetPlan[];
   derived: DerivedRaceState;
+  crew?: DbCrewMember[];
 }
 
-export function WarRoom({ stations, targets, derived }: WarRoomProps) {
+const ROLE_LABEL: Record<string, string> = {
+  crew_chief: "Crew Chief",
+  cc_operator: "C&C Operator",
+  follow_driver: "Follow",
+  shuttle_driver: "Shuttle",
+  rv_crew: "RV",
+  media: "Media",
+  rider: "Rider",
+  observer: "Observer",
+};
+
+export function WarRoom({ stations, targets, derived, crew = [] }: WarRoomProps) {
   useTick(1000);
   const live = derived.latest !== null;
   const s = live
@@ -230,14 +242,35 @@ export function WarRoom({ stations, targets, derived }: WarRoomProps) {
       {/* Bottom — crew, nutrition, vitals */}
       <div className="grid gap-3.5 md:grid-cols-3">
         <Card>
-          <CardHead left="Crew · 10" right="live" />
+          <CardHead left={`Crew · ${crew.length}`} right="roster" />
           <div className="flex flex-col gap-2 p-2.5">
-            {CREW.slice(0, 4).map((c) => (
+            {crew.slice(0, 4).map((c) => (
               <CrewCard
                 key={c.id}
-                c={{ ...c, status: c.status as Parameters<typeof CrewCard>[0]["c"]["status"] }}
+                c={{
+                  id: c.id,
+                  initials:
+                    c.initials ??
+                    c.full_name
+                      .split(/\s+/)
+                      .slice(0, 2)
+                      .map((s) => s[0]?.toUpperCase() ?? "")
+                      .join(""),
+                  name: c.full_name,
+                  role: ROLE_LABEL[c.role] ?? c.role,
+                  color: c.color ?? "#71717a",
+                  vehicle: c.title ?? "—",
+                  status: "OFF",
+                  loc: c.email ?? "",
+                  tag: c.phone ?? "",
+                }}
               />
             ))}
+            {crew.length === 0 && (
+              <div className="py-4 text-center text-[12px] text-[color:var(--fg-4)]">
+                No crew yet. Add via Team › Roster.
+              </div>
+            )}
             <button
               type="button"
               className="mt-0.5 rounded-full border border-[color:var(--border)] py-1.5 text-[12px] font-semibold text-[color:var(--fg-3)] hover:text-[color:var(--fg-1)]"

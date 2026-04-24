@@ -76,21 +76,44 @@ Last updated: 2026-04-23
 
 ## Per-screen audit (AA5 detail)
 
-| Screen | Works? | Good | Rough | Priority |
-|---|---|---|---|---|
-| War Room `/` | ✅ | live data | density high on mobile, card hierarchy flat | P1 |
-| Crew `/crew` | ⚠️ | shows roster | no on-duty toggle, no shift handover | P1 |
-| Time Stations `/time-stations` | ⚠️ | table OK | stale coords vs new GPX, no ETA | P1 |
-| Nutrition `/nutrition` | ✅ | writes live | 12 buttons crowded, no history filter | P2 |
-| Weather `/weather` | 🔧 | route exists | no data source wired | P2 |
-| Compliance `/compliance` | ⚠️ | rule evals visible | no manual override | P2 |
-| Comms `/comms` | ⚠️ | Discord log shown | no outbound compose | P2 |
-| Sleep `/sleep` | ⚠️ | logs visible | no Whoop sleep overlay yet | P2 |
-| Pre-race `/pre-race` | ⚠️ | checklist shown | not editable | P3 |
-| Spectator `/spectator` | 🔧 | works | not team-scoped | P0 |
-| Admin `/admin` | ⚠️ | overview | needs per-team scope | P1 |
-| Admin roster `/admin/roster` | ✅ | edit works | no bulk invite | P2 |
-| Debrief `/debrief` | ⚠️ | mockup content | post-race only, lowest priority now | P3 |
+Revisit 2026-04-23 — added mock-data usage column. 7 screens still
+consume `src/lib/raam/mock-data.ts` (ALERTS, RACE_STATE, WEATHER_NOW,
+VEHICLES, NUTRITION_LOG, TARGETS). Tracked as AA5.x sub-tasks.
+
+| Screen | State | Top issues | AA5 sub |
+|---|---|---|---|
+| War Room `/` | ⚠️ | mock ALERTS banner · mock WEATHER · mock vitals. Crew now live ✅ | AA5.1 ✅ / AA5.3 |
+| Crew `/crew` | ⚠️ | uses mock CREW for status pills/shifts; no real shift table | AA5.4 |
+| Time Stations `/time-stations` | ⚠️ | stale coords vs new GPX · no ETA derived · table only | AA5.5 |
+| Nutrition `/nutrition` | ✅ | 12 buttons crowded · no history filter | AA5.6 |
+| Weather `/weather` | 🔧 | uses mock WEATHER_NOW + WEATHER_SEGMENTS · no API wired | AA5.7 |
+| Compliance `/compliance` | ⚠️ | mixes real rule_evaluation + mock penalties | AA5.8 |
+| Comms `/comms` | ⚠️ | Discord log mocked · no outbound compose | AA5.9 |
+| Sleep `/sleep` | ⚠️ | logs visible · Whoop sleep overlay absent | AA5.10 |
+| Pre-race `/pre-race` | ⚠️ | checklist shown · not editable · not per-team | AA5.11 |
+| Spectator `/spectator/:slug` | ✅ | team-scoped (AA1); still uses hardcoded copy | AA5.12 |
+| Admin `/admin` | ⚠️ | overview numbers hardcoded | AA5.13 |
+| Admin roster `/admin/roster` | ✅ | edit works · no bulk invite (done via onboarding) | — |
+| Debrief `/debrief` | ⚠️ | mockup content · post-race, P3 | — |
+| Landing `/` (logged out) | ✅ | fresh, feature grid, CTAs | — |
+| Signup `/signup` | ✅ | 2-step wizard | — |
+| Onboarding `/onboarding` | ✅ | 4-step wizard + crew invites | — |
+
+### AA5 sub-task queue
+
+- ✅ AA5.1 War Room: real crew from DB (shipped)
+- ⏳ AA5.2 FooterBar: real derived state (requires pulling in layout)
+- ⏳ AA5.3 War Room: real ALERTS from rule_evaluation
+- ⏳ AA5.4 Crew screen: real shift data (new `crew_shift` rows)
+- ⏳ AA5.5 Time Stations: ETA calc from derived.currentSpeed + coord remap
+- ⏳ AA5.6 Nutrition: history filter (today / 3h / entries)
+- ⏳ AA5.7 Weather: Open-Meteo wire for rider coord
+- ⏳ AA5.8 Compliance: merge rule_evaluation + penalty table
+- ⏳ AA5.9 Comms: compose → Discord webhook outbound
+- ⏳ AA5.10 Sleep: Whoop sleep overlay on rest_log
+- ⏳ AA5.11 Pre-race: editable checklist per team
+- ⏳ AA5.12 Spectator: team-branded header copy
+- ⏳ AA5.13 Admin overview: real counts (crew N, rules N, evals N)
 
 ---
 

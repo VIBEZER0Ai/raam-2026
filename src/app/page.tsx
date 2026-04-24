@@ -6,6 +6,7 @@ import {
   getTimeStations,
   getTargetPlan,
   getDerivedRaceState,
+  getCrewMembers,
 } from "@/lib/db/queries";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getUserTeams } from "@/lib/team";
@@ -30,10 +31,11 @@ export default async function Home() {
   // Future: multi-team picker. For MVP: jump to the first team's dashboard.
   // War Room stays at / for Team Kabir (team_id is backfilled on all rows).
 
-  const [stations, targets, derived] = await Promise.all([
+  const [stations, targets, derived, crew] = await Promise.all([
     getTimeStations(),
     getTargetPlan(),
     getDerivedRaceState(),
+    getCrewMembers(),
   ]);
 
   if (stations.length === 0) {
@@ -53,7 +55,12 @@ export default async function Home() {
 
   return (
     <>
-      <WarRoom stations={stations} targets={targets} derived={derived} />
+      <WarRoom
+        stations={stations}
+        targets={targets}
+        derived={derived}
+        crew={crew}
+      />
       <StrategyCards />
     </>
   );

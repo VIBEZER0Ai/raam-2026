@@ -1,8 +1,15 @@
 import { cn } from "@/lib/utils";
-import type { MockAlert } from "@/lib/raam/mock-data";
+
+export type AlertSeverity = "CRITICAL" | "WARN" | "INFO" | "AMBER";
+
+export interface AlertBannerData {
+  sev: AlertSeverity;
+  title: string;
+  meta?: string;
+}
 
 const SEV_STYLES: Record<
-  MockAlert["sev"],
+  AlertSeverity,
   { wrapper: string; tag: string; tagText: string }
 > = {
   CRITICAL: {
@@ -32,7 +39,7 @@ export function AlertBanner({
   onAck,
   className,
 }: {
-  alert: MockAlert;
+  alert: AlertBannerData;
   onAck?: () => void;
   className?: string;
 }) {
@@ -56,9 +63,11 @@ export function AlertBanner({
       <div className="flex-1 text-[13px] font-semibold leading-snug">
         {alert.title}
       </div>
-      <span className="hidden font-mono text-[11px] opacity-80 md:inline">
-        {alert.meta}
-      </span>
+      {alert.meta && (
+        <span className="hidden font-mono text-[11px] opacity-80 md:inline">
+          {alert.meta}
+        </span>
+      )}
       <button
         type="button"
         onClick={onAck}

@@ -4,7 +4,6 @@ import { useTick } from "@/lib/raam/use-tick";
 import { fmtDHMS, fmtPingAge, msDiff, pad2 } from "@/lib/raam/format";
 import { RACE } from "@/lib/raam/race-config";
 import {
-  ALERTS,
   RACE_STATE,
   WEATHER_NOW,
 } from "@/lib/raam/mock-data";
@@ -13,6 +12,7 @@ import type {
   DbTargetPlan,
   DerivedRaceState,
   DbCrewMember,
+  DbRuleEvaluation,
 } from "@/lib/db/queries";
 import { AlertBanner } from "@/components/chrome/alert-banner";
 import { Card, CardBody, CardHead } from "@/components/ui/card";
@@ -28,6 +28,7 @@ export interface WarRoomProps {
   targets: DbTargetPlan[];
   derived: DerivedRaceState;
   crew?: DbCrewMember[];
+  alerts?: DbRuleEvaluation[];
 }
 
 const ROLE_LABEL: Record<string, string> = {
@@ -41,7 +42,13 @@ const ROLE_LABEL: Record<string, string> = {
   observer: "Observer",
 };
 
-export function WarRoom({ stations, targets, derived, crew = [] }: WarRoomProps) {
+export function WarRoom({
+  stations,
+  targets,
+  derived,
+  crew = [],
+  alerts = [],
+}: WarRoomProps) {
   useTick(1000);
   const live = derived.latest !== null;
   const s = live
@@ -58,7 +65,14 @@ export function WarRoom({ stations, targets, derived, crew = [] }: WarRoomProps)
   const nextTs = stations[s.currentTs + 1];
   const targetByTs = new Map(targets.map((t) => [t.ts_num, t]));
   const tgt = targetByTs.get(s.currentTs);
-  const criticalAlert = ALERTS.find((a) => a.sev === "CRITICAL");
+  const criticalAlert = alerts.find((a) => a.severity === "CRITICAL");
+  const criticalBanner = criticalAlert
+    ? {
+        sev: "CRITICAL" as const,
+        title: criticalAlert.title ?? criticalAlert.rule_code,
+        meta: fmtPingAge(criticalAlert.fired_at),
+      }
+    : null;
   const softCutoffs = new Set<number>(
     RACE.intermediate_checkpoints.filter((c) => !c.hard).map((c) => c.ts),
   );
@@ -68,7 +82,7 @@ export function WarRoom({ stations, targets, derived, crew = [] }: WarRoomProps)
 
   return (
     <div className="flex flex-col gap-3.5">
-      {criticalAlert && <AlertBanner alert={criticalAlert} />}
+      {criticalBanner && <AlertBanner alert={criticalBanner} />}
 
       {/* Hero — cutoff · speed · next TS */}
       <div className="grid gap-3.5 md:grid-cols-3">
@@ -173,20 +187,28 @@ export function WarRoom({ stations, targets, derived, crew = [] }: WarRoomProps)
 
         <div className="flex flex-col gap-3">
           <Card>
-            <CardHead left="Active alerts" right={`${ALERTS.length} open`} />
+            <CardHead
+              left="Active alerts"
+              right={`${alerts.length} open`}
+            />
             <div className="flex flex-col">
-              {ALERTS.slice(0, 3).map((a) => (
+              {alerts.length === 0 && (
+                <div className="px-4 py-6 text-center text-[12px] text-[color:var(--fg-4)]">
+                  No open alerts. Rule engine runs every 5 min.
+                </div>
+              )}
+              {alerts.slice(0, 5).map((a) => (
                 <div
                   key={a.id}
                   className="flex items-center gap-3 border-b border-[color:var(--border-soft)] px-3.5 py-2.5 last:border-b-0"
                 >
-                  <Pill kind={a.sev} />
+                  <Pill kind={a.severity ?? "INFO"} />
                   <div className="min-w-0 flex-1">
                     <div className="text-[12px] font-semibold text-[color:var(--fg-1)]">
-                      {a.title}
+                      {a.title ?? a.rule_code}
                     </div>
                     <div className="mt-0.5 font-mono text-[10px] text-[color:var(--fg-4)]">
-                      {a.meta}
+                      {a.rule_code} · {fmtPingAge(a.fired_at)}
                     </div>
                   </div>
                   <button

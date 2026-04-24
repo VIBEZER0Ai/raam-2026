@@ -485,6 +485,59 @@ export async function getRecentGpsPings(limit = 30): Promise<DbGpsPing[]> {
   return (data ?? []) as DbGpsPing[];
 }
 
+/* =========================================================
+ * Rule evaluations — live alerts feed for War Room + Compliance
+ * ======================================================= */
+
+export interface DbRuleEvaluation {
+  id: string;
+  rule_code: string;
+  fired_at: string;
+  status: "open" | "ack" | "resolved" | "escalated" | "dismissed";
+  context: Record<string, unknown> | null;
+  notes: string | null;
+  // joined from rule table
+  title: string | null;
+  severity: "CRITICAL" | "WARN" | "INFO" | "AMBER" | null;
+}
+
+/**
+ * Return the most recent rule firings, joined with rule.title + severity.
+ * Open-only by default so War Room shows active alerts.
+ */
+export async function getRecentAlerts(
+  opts: { limit?: number; openOnly?: boolean } = {},
+): Promise<DbRuleEvaluation[]> {
+  const { limit = 10, openOnly = true } = opts;
+  const supabase = await createClient();
+  let q = supabase
+    .from("rule_evaluation")
+    .select(
+      "id,rule_code,fired_at,status,context,notes,rule:rule_code(title,severity)",
+    )
+    .order("fired_at", { ascending: false })
+    .limit(limit);
+  if (openOnly) q = q.eq("status", "open");
+  const { data, error } = await q;
+  if (error) {
+    console.error("[getRecentAlerts]", error);
+    return [];
+  }
+  return (data ?? []).map((r) => {
+    const rule = (r as { rule?: { title?: string; severity?: string } }).rule;
+    return {
+      id: (r as { id: string }).id,
+      rule_code: (r as { rule_code: string }).rule_code,
+      fired_at: (r as { fired_at: string }).fired_at,
+      status: (r as { status: DbRuleEvaluation["status"] }).status,
+      context: (r as { context?: Record<string, unknown> | null }).context ?? null,
+      notes: (r as { notes?: string | null }).notes ?? null,
+      title: rule?.title ?? null,
+      severity: (rule?.severity as DbRuleEvaluation["severity"]) ?? null,
+    };
+  });
+}
+
 export async function getDerivedRaceState(): Promise<DerivedRaceState> {
   const [pings, stations] = await Promise.all([
     getRecentGpsPings(60),

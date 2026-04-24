@@ -7,6 +7,12 @@ import { Breadcrumb } from "@/components/chrome/breadcrumb";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getUserTeams, isPlatformAdmin } from "@/lib/team";
 import { createClient } from "@/lib/supabase/server";
+import {
+  getDerivedRaceState,
+  getRecentAlerts,
+} from "@/lib/db/queries";
+import { RACE } from "@/lib/raam/race-config";
+import type { FooterStats } from "@/components/chrome/footer-bar";
 import "./globals.css";
 
 const inter = Inter({
@@ -39,16 +45,49 @@ export default async function RootLayout({
   const user = await getCurrentUser();
   const isPublicMarketing = !user;
 
-  // Gather context for authenticated chrome (account menu + breadcrumb).
+  // Gather context for authenticated chrome (account menu + breadcrumb + footer).
   let memberships: Awaited<ReturnType<typeof getUserTeams>> = [];
   let platformAdmin = false;
   let fullName: string | null = null;
   let initials: string | null = null;
+  let footerStats: FooterStats | null = null;
+  let alertCount = 0;
   if (user) {
-    [memberships, platformAdmin] = await Promise.all([
+    const [mem, admin, derived, alerts] = await Promise.all([
       getUserTeams(),
       isPlatformAdmin(),
+      getDerivedRaceState(),
+      getRecentAlerts({ limit: 20, openOnly: true }),
     ]);
+    memberships = mem;
+    platformAdmin = admin;
+    alertCount = alerts.filter(
+      (a) => a.severity === "CRITICAL" || a.severity === "WARN",
+    ).length;
+    // Elapsed since race start
+    const startMs = new Date(RACE.start.datetime_utc).getTime();
+    const nowMs = Date.now();
+    const elapsedMs = Math.max(0, nowMs - startMs);
+    const elapsedHours = elapsedMs / 3_600_000;
+    const d = Math.floor(elapsedHours / 24);
+    const h = Math.floor(elapsedHours % 24);
+    const m = Math.floor((elapsedMs / 60_000) % 60);
+    const elapsedLabel =
+      elapsedMs === 0
+        ? "—"
+        : `${d}d ${h.toString().padStart(2, "0")}h ${m.toString().padStart(2, "0")}m`;
+    const avgSpeed =
+      elapsedHours > 0 && derived.currentMile > 0
+        ? derived.currentMile / elapsedHours
+        : 0;
+    footerStats = {
+      currentMile: derived.currentMile,
+      currentTs: derived.currentTs,
+      avgSpeed,
+      elapsed: elapsedLabel,
+      targetDelta: "—", // filled in once target_plan wiring ships (AA5.5)
+      totalTs: RACE.course.time_stations ?? 54,
+    };
     // Try to resolve display name + initials via crew_member
     const supabase = await createClient();
     const { data: crewRow } = await supabase
@@ -82,6 +121,7 @@ export default async function RootLayout({
               userFullName={fullName}
               userInitials={initials}
               isPlatformAdmin={platformAdmin}
+              alertCount={alertCount}
               currentTeam={
                 defaultTeam
                   ? {
@@ -113,7 +153,7 @@ export default async function RootLayout({
             )}
             {children}
           </main>
-          {!isPublicMarketing && <FooterBar />}
+          {!isPublicMarketing && <FooterBar stats={footerStats} />}
         </div>
       </body>
     </html>

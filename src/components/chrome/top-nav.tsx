@@ -6,7 +6,6 @@ import { Bell, Moon, Sun } from "lucide-react";
 import { RACE } from "@/lib/raam/race-config";
 import { useTick } from "@/lib/raam/use-tick";
 import { fmtDHMS, msDiff, elapsedSince, pad2 } from "@/lib/raam/format";
-import { ALERTS } from "@/lib/raam/mock-data";
 import { SosButton } from "@/components/chrome/sos-button";
 import { MobileNav } from "@/components/chrome/mobile-nav";
 import { GroupedNav } from "@/components/chrome/grouped-nav";
@@ -36,6 +35,7 @@ export interface TopNavProps {
   userFullName?: string | null;
   userInitials?: string | null;
   isPlatformAdmin?: boolean;
+  alertCount?: number;
   currentTeam?: { slug: string; name: string; role: string } | null;
   allTeams?: AccountMenuMembership[];
 }
@@ -45,6 +45,7 @@ export function TopNav({
   userFullName = null,
   userInitials = null,
   isPlatformAdmin = false,
+  alertCount = 0,
   currentTeam = null,
   allTeams = [],
 }: TopNavProps) {
@@ -80,7 +81,6 @@ export function TopNav({
 
   const elapsed = elapsedSince(RACE.start.datetime_utc);
   const cutoff = fmtDHMS(msDiff(RACE.finish.hard_cutoff_utc));
-  const alertCount = ALERTS.filter((a) => a.sev !== "INFO").length;
 
   return (
     <nav className="sticky top-0 z-40 border-b border-[color:var(--border)] bg-[color:var(--bg)]">

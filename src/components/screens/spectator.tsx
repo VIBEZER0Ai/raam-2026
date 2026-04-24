@@ -38,13 +38,19 @@ export interface SpectatorProps {
   stations: DbTimeStation[];
   currentTs?: number;
   current?: { lat: number; lng: number } | null;
+  teamName?: string;
+  teamSlug?: string;
 }
 
 export function Spectator({
   stations,
   currentTs = 0,
   current = null,
+  teamName,
+  teamSlug,
 }: SpectatorProps) {
+  void teamName;
+  void teamSlug;
   return (
     <div className="-mx-5 -mt-4">
       {/* Public nav */}

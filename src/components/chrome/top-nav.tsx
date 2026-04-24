@@ -10,6 +10,7 @@ import { fmtDHMS, msDiff, elapsedSince, pad2 } from "@/lib/raam/format";
 import { ALERTS } from "@/lib/raam/mock-data";
 import { signOut } from "@/app/login/actions";
 import { SosButton } from "@/components/chrome/sos-button";
+import { MobileNav } from "@/components/chrome/mobile-nav";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -81,13 +82,14 @@ export function TopNav({ userEmail }: { userEmail?: string | null }) {
 
         <div className="flex-1" />
 
-        <div className="flex gap-0.5 rounded-full border border-[color:var(--border)] bg-[color:var(--bg-elev)] p-[3px]">
+        {/* Desktop pill bar — hidden on narrow screens */}
+        <div className="hidden gap-0.5 overflow-x-auto rounded-full border border-[color:var(--border)] bg-[color:var(--bg-elev)] p-[3px] md:flex">
           {TABS.map((t) => (
             <Link
               key={t.href}
               href={t.href}
               className={cn(
-                "rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition-colors",
+                "whitespace-nowrap rounded-full px-3 py-1.5 text-[12px] font-semibold transition-colors lg:px-3.5",
                 t.href === activeHref
                   ? "bg-[color:var(--strava-orange)] text-white"
                   : "text-[color:var(--fg-3)] hover:text-[color:var(--fg-1)]",
@@ -100,11 +102,12 @@ export function TopNav({ userEmail }: { userEmail?: string | null }) {
 
         <div className="flex items-center gap-1.5">
           {night && (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-400 bg-indigo-400/10 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-indigo-400">
+            <span className="hidden items-center gap-1.5 rounded-full border border-indigo-400 bg-indigo-400/10 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-indigo-400 sm:inline-flex">
               <span className="h-1.5 w-1.5 rounded-full bg-indigo-400" />
               NIGHT
             </span>
           )}
+          <MobileNav tabs={TABS} />
           <button
             type="button"
             className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-[color:var(--border)] bg-[color:var(--bg-elev)] hover:border-[color:var(--border-strong)]"

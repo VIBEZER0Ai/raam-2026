@@ -43,7 +43,7 @@ export default async function RootLayout({
       >
         <div className="flex min-h-screen flex-col">
           <TopNav userEmail={user?.email ?? null} />
-          <main className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-4 px-5 pb-[120px] pt-4">
+          <main className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-4 px-3 pb-[140px] pt-3 sm:px-5 sm:pt-4 sm:pb-[120px]">
             {children}
           </main>
           <FooterBar />

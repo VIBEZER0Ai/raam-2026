@@ -20,6 +20,7 @@ const PUBLIC_PREFIXES = [
   "/privacy",
   "/terms",
   "/signup",
+  "/onboarding",
   "/_next",
   "/raam",
   "/favicon",

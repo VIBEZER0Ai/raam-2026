@@ -59,7 +59,7 @@ export function SignupWizard({ templates }: { templates: Template[] }) {
         setErr(res.error);
         return;
       }
-      router.push(`/team/${res.slug}`);
+      router.push(`/onboarding?team=${res.slug}`);
     });
 
   const grouped = Object.entries(

@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Bell, Moon, Sun } from "lucide-react";
 import { RACE } from "@/lib/raam/race-config";
@@ -10,13 +9,14 @@ import { fmtDHMS, msDiff, elapsedSince, pad2 } from "@/lib/raam/format";
 import { ALERTS } from "@/lib/raam/mock-data";
 import { SosButton } from "@/components/chrome/sos-button";
 import { MobileNav } from "@/components/chrome/mobile-nav";
+import { GroupedNav } from "@/components/chrome/grouped-nav";
 import {
   AccountMenu,
   type AccountMenuMembership,
 } from "@/components/chrome/account-menu";
 import { cn } from "@/lib/utils";
 
-const TABS = [
+const LEGACY_TABS_IGNORED = [
   { href: "/",              label: "War Room",     group: "live" },
   { href: "/crew",          label: "Crew",         group: "live" },
   { href: "/time-stations", label: "Time Stations", group: "live" },
@@ -49,7 +49,6 @@ export function TopNav({
   allTeams = [],
 }: TopNavProps) {
   useTick(1000);
-  const pathname = usePathname();
   // Read persisted choice on mount — falls back to system preference, then dark.
   const [dark, setDark] = useState<boolean>(() => true);
   const [night, setNight] = useState(false);
@@ -83,10 +82,6 @@ export function TopNav({
   const cutoff = fmtDHMS(msDiff(RACE.finish.hard_cutoff_utc));
   const alertCount = ALERTS.filter((a) => a.sev !== "INFO").length;
 
-  const activeHref = TABS.find((t) =>
-    t.href === "/" ? pathname === "/" : pathname.startsWith(t.href),
-  )?.href;
-
   return (
     <nav className="sticky top-0 z-40 border-b border-[color:var(--border)] bg-[color:var(--bg)]">
       <div className="mx-auto flex min-h-[60px] max-w-[1440px] items-center gap-4 px-5 py-2.5">
@@ -115,23 +110,8 @@ export function TopNav({
 
         <div className="flex-1" />
 
-        {/* Desktop pill bar — hidden on narrow screens */}
-        <div className="hidden gap-0.5 overflow-x-auto rounded-full border border-[color:var(--border)] bg-[color:var(--bg-elev)] p-[3px] md:flex">
-          {TABS.map((t) => (
-            <Link
-              key={t.href}
-              href={t.href}
-              className={cn(
-                "whitespace-nowrap rounded-full px-3 py-1.5 text-[12px] font-semibold transition-colors lg:px-3.5",
-                t.href === activeHref
-                  ? "bg-[color:var(--strava-orange)] text-white"
-                  : "text-[color:var(--fg-3)] hover:text-[color:var(--fg-1)]",
-              )}
-            >
-              {t.label}
-            </Link>
-          ))}
-        </div>
+        {/* Desktop grouped nav (md+) — hidden on phones */}
+        <GroupedNav />
 
         <div className="flex items-center gap-1.5">
           {night && (
@@ -140,7 +120,7 @@ export function TopNav({
               NIGHT
             </span>
           )}
-          <MobileNav tabs={TABS} />
+          <MobileNav />
           <button
             type="button"
             className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-[color:var(--border)] bg-[color:var(--bg-elev)] hover:border-[color:var(--border-strong)]"

@@ -4,26 +4,20 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
+import { NAV_GROUPS, NAV_PRIMARY } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
-export interface NavTab {
-  href: string;
-  label: string;
-  group: string;
-}
-
 /**
- * Mobile-only slide-down drawer nav. Triggered by a hamburger button
- * in the top-nav. Lists every tab as a tappable row with generous
- * 48px targets. Hidden on md+ (desktop shows pill bar instead).
+ * Mobile slide-down drawer nav. Hamburger trigger visible only on <md
+ * screens. Inside: War Room primary + 3 grouped sections (Operate /
+ * Plan / Team) mirroring the desktop GroupedNav.
  */
-export function MobileNav({ tabs }: { tabs: NavTab[] }) {
+export function MobileNav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
-  const activeHref = tabs.find((t) =>
-    t.href === "/" ? pathname === "/" : pathname.startsWith(t.href),
-  )?.href;
+  const isItemActive = (href: string) =>
+    href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   return (
     <>
@@ -42,55 +36,68 @@ export function MobileNav({ tabs }: { tabs: NavTab[] }) {
           onClick={() => setOpen(false)}
         >
           <div
-            className="fixed left-0 right-0 top-[60px] border-b border-[color:var(--border)] bg-[color:var(--bg-elev)] shadow-2xl"
+            className="fixed left-0 right-0 top-[60px] max-h-[calc(100vh-60px)] overflow-y-auto border-b border-[color:var(--border)] bg-[color:var(--bg-elev)] shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mx-auto max-w-[1440px] px-4 py-3">
-              <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.15em] text-[color:var(--fg-4)]">
-                Live
-              </div>
-              <div className="grid grid-cols-2 gap-1.5">
-                {tabs
-                  .filter((t) => t.group === "live")
-                  .map((t) => (
-                    <Link
-                      key={t.href}
-                      href={t.href}
-                      onClick={() => setOpen(false)}
-                      className={cn(
-                        "min-h-[48px] rounded-lg px-4 py-3 text-[14px] font-semibold",
-                        t.href === activeHref
-                          ? "bg-[color:var(--strava-orange)] text-white"
-                          : "border border-[color:var(--border)] bg-[color:var(--bg)] text-[color:var(--fg-1)]",
-                      )}
-                    >
-                      {t.label}
-                    </Link>
-                  ))}
-              </div>
+              {/* War Room primary */}
+              <Link
+                href={NAV_PRIMARY.href}
+                onClick={() => setOpen(false)}
+                className={cn(
+                  "flex min-h-[52px] flex-col justify-center rounded-xl px-4 py-2.5 text-[15px] font-extrabold",
+                  isItemActive(NAV_PRIMARY.href)
+                    ? "bg-[color:var(--strava-orange)] text-white"
+                    : "border border-[color:var(--border)] bg-[color:var(--bg)] text-[color:var(--fg-1)]",
+                )}
+              >
+                {NAV_PRIMARY.label}
+                <span className="mt-0.5 text-[11px] font-normal opacity-80">
+                  {NAV_PRIMARY.desc}
+                </span>
+              </Link>
 
-              <div className="mb-2 mt-4 text-[10px] font-bold uppercase tracking-[0.15em] text-[color:var(--fg-4)]">
-                Lifecycle
-              </div>
-              <div className="grid grid-cols-2 gap-1.5 pb-3">
-                {tabs
-                  .filter((t) => t.group === "lifecycle")
-                  .map((t) => (
-                    <Link
-                      key={t.href}
-                      href={t.href}
-                      onClick={() => setOpen(false)}
-                      className={cn(
-                        "min-h-[48px] rounded-lg px-4 py-3 text-[14px] font-semibold",
-                        t.href === activeHref
-                          ? "bg-[color:var(--strava-orange)] text-white"
-                          : "border border-[color:var(--border)] bg-[color:var(--bg)] text-[color:var(--fg-1)]",
-                      )}
-                    >
-                      {t.label}
-                    </Link>
-                  ))}
-              </div>
+              {NAV_GROUPS.map((g) => (
+                <section key={g.id} className="mt-4">
+                  <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.15em] text-[color:var(--fg-4)]">
+                    {g.label}
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {g.items.map((it) => {
+                      const active = isItemActive(it.href);
+                      return (
+                        <Link
+                          key={it.href}
+                          href={it.href}
+                          onClick={() => setOpen(false)}
+                          className={cn(
+                            "min-h-[54px] rounded-lg px-3 py-2.5 text-left",
+                            active
+                              ? "bg-[color:var(--strava-orange)] text-white"
+                              : "border border-[color:var(--border)] bg-[color:var(--bg)]",
+                          )}
+                        >
+                          <span className="block text-[14px] font-extrabold">
+                            {it.label}
+                          </span>
+                          {it.desc && (
+                            <span
+                              className={cn(
+                                "mt-0.5 block text-[11px] font-normal",
+                                active
+                                  ? "opacity-80"
+                                  : "text-[color:var(--fg-4)]",
+                              )}
+                            >
+                              {it.desc}
+                            </span>
+                          )}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </section>
+              ))}
             </div>
           </div>
         </div>

@@ -1,15 +1,35 @@
+import { redirect } from "next/navigation";
 import { WarRoom } from "@/components/screens/war-room";
 import { StrategyCards } from "@/components/screens/strategy-cards";
+import { Landing } from "@/components/screens/landing";
 import {
   getTimeStations,
   getTargetPlan,
   getDerivedRaceState,
 } from "@/lib/db/queries";
+import { getCurrentUser } from "@/lib/auth/session";
+import { getUserTeams } from "@/lib/team";
 
-// Fresh Supabase pull every 30s
+// Fresh Supabase pull every 30s for logged-in dashboard
 export const revalidate = 30;
 
 export default async function Home() {
+  const user = await getCurrentUser();
+
+  // Logged-out visitors see the public marketing landing page.
+  if (!user) {
+    return <Landing />;
+  }
+
+  // Super-admin (Vishal) keeps the legacy War Room at / for now.
+  // Everyone else is routed to their team dashboard.
+  const memberships = await getUserTeams();
+  if (memberships.length === 0) {
+    redirect("/signup");
+  }
+  // Future: multi-team picker. For MVP: jump to the first team's dashboard.
+  // War Room stays at / for Team Kabir (team_id is backfilled on all rows).
+
   const [stations, targets, derived] = await Promise.all([
     getTimeStations(),
     getTargetPlan(),

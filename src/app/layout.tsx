@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { TopNav } from "@/components/chrome/top-nav";
 import { FooterBar } from "@/components/chrome/footer-bar";
+import { PublicHeader } from "@/components/chrome/public-header";
 import { getCurrentUser } from "@/lib/auth/session";
 import "./globals.css";
 
@@ -33,6 +34,10 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const user = await getCurrentUser();
+  // Signed-out visitors get the lightweight marketing header.
+  // Authenticated users get the race-ops chrome (TopNav + race-stats FooterBar).
+  const isPublicMarketing = !user;
+
   return (
     <html lang="en" className={`${inter.variable} ${jetbrains.variable} h-full`}>
       <body
@@ -42,11 +47,21 @@ export default async function RootLayout({
         }}
       >
         <div className="flex min-h-screen flex-col">
-          <TopNav userEmail={user?.email ?? null} />
-          <main className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-4 px-3 pb-[140px] pt-3 sm:px-5 sm:pt-4 sm:pb-[120px]">
+          {isPublicMarketing ? (
+            <PublicHeader />
+          ) : (
+            <TopNav userEmail={user?.email ?? null} />
+          )}
+          <main
+            className={
+              isPublicMarketing
+                ? "mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-4 px-3 pt-3 sm:px-5 sm:pt-4"
+                : "mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-4 px-3 pb-[140px] pt-3 sm:px-5 sm:pt-4 sm:pb-[120px]"
+            }
+          >
             {children}
           </main>
-          <FooterBar />
+          {!isPublicMarketing && <FooterBar />}
         </div>
       </body>
     </html>

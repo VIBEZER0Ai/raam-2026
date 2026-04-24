@@ -31,20 +31,34 @@ const TABS = [
 export function TopNav({ userEmail }: { userEmail?: string | null }) {
   useTick(1000);
   const pathname = usePathname();
-  const [dark, setDark] = useState(true);
+  // Read persisted choice on mount — falls back to system preference, then dark.
+  const [dark, setDark] = useState<boolean>(() => true);
   const [night, setNight] = useState(false);
 
+  // Load saved theme + auto-night on mount
   useEffect(() => {
-    const html = document.documentElement;
-    html.classList.toggle("light", !dark);
-    html.classList.toggle("night", night);
-  }, [dark, night]);
-
-  useEffect(() => {
-    // Auto-night 19:00-07:00 local
+    const saved = typeof window !== "undefined"
+      ? localStorage.getItem("ventor.theme")
+      : null;
+    if (saved === "light") setDark(false);
+    else if (saved === "dark") setDark(true);
+    else if (typeof window !== "undefined"
+             && window.matchMedia?.("(prefers-color-scheme: light)").matches) {
+      setDark(false);
+    }
     const h = new Date().getHours();
     setNight(h >= 19 || h < 7);
   }, []);
+
+  // Apply to <html>. Night only amplifies dark; in light mode night is off.
+  useEffect(() => {
+    const html = document.documentElement;
+    html.classList.toggle("light", !dark);
+    html.classList.toggle("night", dark && night);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("ventor.theme", dark ? "dark" : "light");
+    }
+  }, [dark, night]);
 
   const elapsed = elapsedSince(RACE.start.datetime_utc);
   const cutoff = fmtDHMS(msDiff(RACE.finish.hard_cutoff_utc));

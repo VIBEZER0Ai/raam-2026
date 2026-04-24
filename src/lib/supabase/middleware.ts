@@ -19,6 +19,7 @@ const PUBLIC_PREFIXES = [
   "/api/whoop/callback",
   "/privacy",
   "/terms",
+  "/signup",
   "/_next",
   "/raam",
   "/favicon",
@@ -53,7 +54,10 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const pathname = request.nextUrl.pathname;
-  const isPublic = PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
+  // "/" is public (marketing landing page). Anything else must match a prefix.
+  const isPublic =
+    pathname === "/" ||
+    PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();

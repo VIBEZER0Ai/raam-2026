@@ -3,14 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Bell, LogOut, Moon, Sun } from "lucide-react";
+import { Bell, Moon, Sun } from "lucide-react";
 import { RACE } from "@/lib/raam/race-config";
 import { useTick } from "@/lib/raam/use-tick";
 import { fmtDHMS, msDiff, elapsedSince, pad2 } from "@/lib/raam/format";
 import { ALERTS } from "@/lib/raam/mock-data";
-import { signOut } from "@/app/login/actions";
 import { SosButton } from "@/components/chrome/sos-button";
 import { MobileNav } from "@/components/chrome/mobile-nav";
+import {
+  AccountMenu,
+  type AccountMenuMembership,
+} from "@/components/chrome/account-menu";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -28,7 +31,23 @@ const TABS = [
   { href: "/debrief",       label: "Debrief",      group: "lifecycle" },
 ];
 
-export function TopNav({ userEmail }: { userEmail?: string | null }) {
+export interface TopNavProps {
+  userEmail?: string | null;
+  userFullName?: string | null;
+  userInitials?: string | null;
+  isPlatformAdmin?: boolean;
+  currentTeam?: { slug: string; name: string; role: string } | null;
+  allTeams?: AccountMenuMembership[];
+}
+
+export function TopNav({
+  userEmail,
+  userFullName = null,
+  userInitials = null,
+  isPlatformAdmin = false,
+  currentTeam = null,
+  allTeams = [],
+}: TopNavProps) {
   useTick(1000);
   const pathname = usePathname();
   // Read persisted choice on mount — falls back to system preference, then dark.
@@ -144,18 +163,14 @@ export function TopNav({ userEmail }: { userEmail?: string | null }) {
           </button>
           <SosButton />
           {userEmail && (
-            <form action={signOut}>
-              <button
-                type="submit"
-                title={`Signed in as ${userEmail} — click to sign out`}
-                className="flex h-9 items-center gap-2 rounded-lg border border-[color:var(--border)] bg-[color:var(--bg-elev)] px-3 text-[11px] font-bold text-[color:var(--fg-3)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--fg-1)]"
-              >
-                <span className="hidden max-w-[120px] truncate md:inline">
-                  {userEmail}
-                </span>
-                <LogOut className="h-3.5 w-3.5" />
-              </button>
-            </form>
+            <AccountMenu
+              userEmail={userEmail}
+              userFullName={userFullName}
+              userInitials={userInitials}
+              isPlatformAdmin={isPlatformAdmin}
+              currentTeam={currentTeam}
+              allTeams={allTeams}
+            />
           )}
         </div>
       </div>

@@ -3,7 +3,10 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import { TopNav } from "@/components/chrome/top-nav";
 import { FooterBar } from "@/components/chrome/footer-bar";
 import { PublicHeader } from "@/components/chrome/public-header";
+import { Breadcrumb } from "@/components/chrome/breadcrumb";
 import { getCurrentUser } from "@/lib/auth/session";
+import { getUserTeams, isPlatformAdmin } from "@/lib/team";
+import { createClient } from "@/lib/supabase/server";
 import "./globals.css";
 
 const inter = Inter({
@@ -34,9 +37,33 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const user = await getCurrentUser();
-  // Signed-out visitors get the lightweight marketing header.
-  // Authenticated users get the race-ops chrome (TopNav + race-stats FooterBar).
   const isPublicMarketing = !user;
+
+  // Gather context for authenticated chrome (account menu + breadcrumb).
+  let memberships: Awaited<ReturnType<typeof getUserTeams>> = [];
+  let platformAdmin = false;
+  let fullName: string | null = null;
+  let initials: string | null = null;
+  if (user) {
+    [memberships, platformAdmin] = await Promise.all([
+      getUserTeams(),
+      isPlatformAdmin(),
+    ]);
+    // Try to resolve display name + initials via crew_member
+    const supabase = await createClient();
+    const { data: crewRow } = await supabase
+      .from("crew_member")
+      .select("full_name,initials")
+      .or(
+        `auth_user_id.eq.${user.id},email.ilike.${user.email}`,
+      )
+      .maybeSingle();
+    if (crewRow) {
+      fullName = (crewRow as { full_name?: string | null }).full_name ?? null;
+      initials = (crewRow as { initials?: string | null }).initials ?? null;
+    }
+  }
+  const defaultTeam = memberships[0];
 
   return (
     <html lang="en" className={`${inter.variable} ${jetbrains.variable} h-full`}>
@@ -50,15 +77,40 @@ export default async function RootLayout({
           {isPublicMarketing ? (
             <PublicHeader />
           ) : (
-            <TopNav userEmail={user?.email ?? null} />
+            <TopNav
+              userEmail={user?.email ?? null}
+              userFullName={fullName}
+              userInitials={initials}
+              isPlatformAdmin={platformAdmin}
+              currentTeam={
+                defaultTeam
+                  ? {
+                      slug: defaultTeam.team.slug,
+                      name: defaultTeam.team.name,
+                      role: defaultTeam.role,
+                    }
+                  : null
+              }
+              allTeams={memberships.map((m) => ({
+                slug: m.team.slug,
+                name: m.team.name,
+                role: m.role,
+              }))}
+            />
           )}
           <main
             className={
               isPublicMarketing
                 ? "mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-4 px-3 pt-3 sm:px-5 sm:pt-4"
-                : "mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-4 px-3 pb-[140px] pt-3 sm:px-5 sm:pt-4 sm:pb-[120px]"
+                : "mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-3 px-3 pb-[140px] pt-3 sm:px-5 sm:pt-4 sm:pb-[120px]"
             }
           >
+            {!isPublicMarketing && (
+              <Breadcrumb
+                teamName={defaultTeam?.team.name ?? null}
+                teamSlug={defaultTeam?.team.slug ?? null}
+              />
+            )}
             {children}
           </main>
           {!isPublicMarketing && <FooterBar />}

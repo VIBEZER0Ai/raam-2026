@@ -12,6 +12,7 @@
     "migrate:reset": "tsx scripts/migrate.ts reset",
     "migrate:mark": "tsx scripts/migrate.ts mark",
     "parse-gpx": "tsx scripts/parse-gpx.ts",
+    "extract-ts": "tsx scripts/extract-ts-waypoints.ts",
     "simulate:gps": "tsx scripts/simulate-gps.ts"
   },
   "dependencies": {

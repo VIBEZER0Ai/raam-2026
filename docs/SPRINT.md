@@ -102,18 +102,118 @@ VEHICLES, NUTRITION_LOG, TARGETS). Tracked as AA5.x sub-tasks.
 ### AA5 sub-task queue
 
 - ✅ AA5.1 War Room: real crew from DB (shipped)
-- ⏳ AA5.2 FooterBar: real derived state (requires pulling in layout)
-- ⏳ AA5.3 War Room: real ALERTS from rule_evaluation
+- ✅ AA5.2 FooterBar + TopNav alert count from DB (shipped)
+- ✅ AA5.3 War Room: real ALERTS from rule_evaluation (shipped)
 - ⏳ AA5.4 Crew screen: real shift data (new `crew_shift` rows)
-- ⏳ AA5.5 Time Stations: ETA calc from derived.currentSpeed + coord remap
+- ⏳ AA5.5 Time Stations: ETA calc + coord remap (folds into AA6.7)
 - ⏳ AA5.6 Nutrition: history filter (today / 3h / entries)
-- ⏳ AA5.7 Weather: Open-Meteo wire for rider coord
+- ⏳ AA5.7 Weather: Open-Meteo wire for rider coord — bumped P0
 - ⏳ AA5.8 Compliance: merge rule_evaluation + penalty table
-- ⏳ AA5.9 Comms: compose → Discord webhook outbound
+- ⏳ AA5.9 Comms: compose → Discord webhook outbound (RAAM officials only)
 - ⏳ AA5.10 Sleep: Whoop sleep overlay on rest_log
 - ⏳ AA5.11 Pre-race: editable checklist per team
 - ⏳ AA5.12 Spectator: team-branded header copy
 - ⏳ AA5.13 Admin overview: real counts (crew N, rules N, evals N)
+
+---
+
+## Wave AA6 — Crew sync deliverables (2026-04-27)
+
+Output of Kabir + Sapna brainstorm call + 2026 Route Book ingest. Each ticket
+has a clear acceptance bar and a source link to the call digest in this repo
+(`docs/call-2026-04-27.md` — TBD).
+
+### Foundation (this session)
+
+- ✅ AA6.0 Route ingest
+  - Official 2026 GPX in `public/raam/raam-2026.gpx` (4 MB, 47742 trkpts)
+  - Polyline regen → `public/raam/route.geojson` (1415 pts, 30 KB)
+  - 54 TS waypoints inferred → `public/raam/ts-waypoints.json` (max drift 5.9 mi at finish, <0.2%)
+  - Canonical 2026 TS list → `src/lib/raam/time-stations-2026.ts` with section-flag taxonomy
+    (`racers-only`, `no-aux-vehicles`, `no-rvs`, `leapfrog-daytime`,
+    `direct-follow-mandatory`, `shuttle-zone`, `tz-change`, `altitude-pass`, `no-services`)
+  - 2026 differs from 2023 baseline: total 3068.2 mi (was 2935), eastern half rerouted
+    Annapolis MD → Atlantic City NJ via Darlington MD + Malaga NJ
+  - Two shuttle zones flagged: TS9 Sedona, TS52 Delaware Memorial Bridge
+  - Three time-zone changes flagged: TS10 Navajo Nation (MDT), TS23 Kansas (CDT), TS38 Indiana (EDT/RAAM time)
+
+### Live ops tickets
+
+- ⏳ AA6.1 Stop-request workflow
+  - Crew submits stop reason + ETA (`loo`, `food`, `mech`, `other`)
+  - 15-min countdown shown on Kabir's surface
+  - Acknowledge button (Kabir) → marks `rider_acknowledged` in timeline
+  - Mech-flat fast-path: zero-countdown immediate stop
+  - Rider surface: open spike → Garmin Connect IQ data field vs voice prompt over crew BT
+- ⏳ AA6.2 Race elapsed timer
+  - Single source of truth, race-start anchored, Eastern Daylight Time locked
+  - Immune to crossing Mountain/Central/Eastern boundaries during race
+  - Display: `Day Xd Yh Zm` and `Elapsed Hh Mm`
+  - DB: `race_event` table with `start_time_edt`, `state` (pre|live|finished)
+- ⏳ AA6.3 Vehicle-separation monitor
+  - Track `follow_vehicle` + `aux_vehicle` GPS pings
+  - Alert when distance > 30 min apart at current speed (red banner)
+  - Aux-fallback section TS6→TS9 special rule: aux must pre-position at flagged park points
+- ⏳ AA6.4 Bike + tool catalog
+  - Photos + canonical name + torque spec + manual link
+  - Searchable, scrollable list, mobile-first
+  - Source: Joby's bike photos + Kabir's manuals
+- ⏳ AA6.5 Crew skill matrix
+  - Per crew member × skill grid (`front-wheel-mount`, `tubeless-patch`, `di2-tune`, `tire-change`, `nav-gpx`)
+  - Self-attested ✓ + verified-by-Kabir ✓
+  - Drives stop-request routing (only verified crew dispatched for that fix)
+- ⏳ AA6.6 Competitor leaderboard
+  - Pull from RAAM live tracker
+  - Filter by **age category** (Kabir's group only)
+  - Position delta vs Kabir's split projection
+- ⏳ AA6.7 GPX-driven route view (folds AA5.5)
+  - Render `route.geojson` + `ts-waypoints.json` on Mapbox
+  - Section-rule badges per leg (no-aux / shuttle / direct-follow)
+  - Highlight aux-fallback zones TS6→TS9 in red
+  - Time-zone markers at TS10 / TS23 / TS38
+  - Shuttle markers at TS9 + TS52
+  - ETA per TS using `derived.currentSpeed` + book miles
+- ⏳ AA6.8 Bike-shop directory near each TS
+  - Geocode shops within 25 mi of each TS coord
+  - Cache once, store in `bike_shop` table with phone + open hours
+  - Surface in Time Stations panel + Comms quick-call
+- ⏳ AA6.9 Vehicle-status screen
+  - Live grid: Follow / Leapfrog / Rider · current driver/navigator · GPS coord · last ping
+  - GPS source priority: Garmin tracker (recent <5min) → phone GPS → RAAM tracker (rider only)
+  - Mobile-first, glanceable from a moving car
+- ⏳ AA6.10 Kabir role + access
+  - Email: kabirachure@gmail.com
+  - Permissions: Co-Chief admin (mirror of Sapna) + Rider read-only stop-request inbound
+  - Ack button on rider surface (TBD via AA6.14)
+- ⏳ AA6.11 WhatsApp sync (replaces Discord plan)
+  - Outbound: Cloud API → main group (number +19056216302)
+  - Inbound: webhook on verified domain → app ingest
+  - Shifts groups (Shift-1, Shift-2): no app sync, read-only mirror
+  - Discord remains: RAAM officials channel only
+  - Spike AA6.11a: WhatsApp consumer-group bridge legality (Cloud API does not natively post into consumer groups)
+- ⏳ AA6.12 Route book ingest UI
+  - Render section rules + cue rows from `time-stations-2026.ts` flags
+  - Per-leg detail panel: rules, mile, ETA, weather, bike shops, aux fallback
+- ⏳ AA6.13 Shuttle SOP
+  - Pre-stage bike rack on follow vehicle
+  - Bike load procedure for TS9 Sedona + TS52 Delaware Memorial Bridge
+  - Surfaced as a checklist that activates at TS-1 mile threshold
+- ⏳ AA6.14 Kabir comm surface (spike)
+  - Option A: Garmin Connect IQ data field — count-down + ack tap
+  - Option B: voice prompt over crew BT comm — auto-play + verbal ack
+  - Decision: pick lowest cognitive load while riding
+
+### Sprint sequencing
+
+P0 next session:
+1. AA6.7 (GPX route + TS render) — unlocks visual situational awareness
+2. AA6.2 (race elapsed timer) — needed before any ETA work
+3. AA5.7 (weather) — Open-Meteo wire, plug into AA6.7 panel
+
+P1 after that:
+4. AA6.10 (Kabir role) — small RBAC change
+5. AA6.4 (bike + tool catalog) — content-heavy, can run async
+6. AA6.9 (vehicle-status screen) — depends on phone GPS PWA shell
 
 ---
 

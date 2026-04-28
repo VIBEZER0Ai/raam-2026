@@ -4,6 +4,7 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
+import type { SectionFlag } from "@/lib/raam/time-stations-2026";
 
 export interface DbTimeStation {
   ts_num: number;
@@ -13,6 +14,8 @@ export interface DbTimeStation {
   miles_to_fin: number;
   lat: number | null;
   lng: number | null;
+  /** Section-rule flags active in the segment ENTERING this TS. */
+  flags: SectionFlag[];
   split_2023_elapsed: string | null;
   avg_speed_2023: number | null;
   avg_this_ts_2023: number | null;
@@ -68,7 +71,7 @@ export async function getTimeStations(): Promise<DbTimeStation[]> {
   const { data, error } = await supabase
     .from("time_station")
     .select(
-      "ts_num,name,state,mile_total,miles_to_fin,lat,lng,split_2023_elapsed,avg_speed_2023,avg_this_ts_2023,arrival_ts_edt",
+      "ts_num,name,state,mile_total,miles_to_fin,lat,lng,flags,split_2023_elapsed,avg_speed_2023,avg_this_ts_2023,arrival_ts_edt",
     )
     .order("ts_num", { ascending: true });
   if (error) {

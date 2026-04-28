@@ -21,7 +21,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { TIME_STATIONS_2026 } from "../src/lib/raam/time-stations-2026.ts";
+import { TIME_STATIONS_2026 } from "../src/lib/raam/time-stations-2026";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");

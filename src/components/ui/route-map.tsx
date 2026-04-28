@@ -4,6 +4,38 @@ import { useEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { DbTimeStation } from "@/lib/db/queries";
+import type { SectionFlag } from "@/lib/raam/time-stations-2026";
+
+/** Marker color per primary section flag. Highest-severity flag wins. */
+const FLAG_COLOR: Record<SectionFlag, string> = {
+  "racers-only": "#ef4444",              // red — no support at all
+  "no-aux-vehicles": "#f97316",          // orange — aux must take alt route
+  "no-rvs": "#fb923c",                   // light orange — RV restriction
+  "shuttle-zone": "#a855f7",             // purple — bike loaded into vehicle
+  "direct-follow-mandatory": "#3b82f6",  // blue — both vehicles glued
+  "leapfrog-daytime": "#facc15",         // yellow — leapfrog only
+  "tz-change": "#06b6d4",                // cyan — clock change
+  "altitude-pass": "#94a3b8",            // slate — major mountain
+  "no-services": "#737373",              // gray — long unsupported food/gas run
+};
+/** Severity rank — higher value = more important when picking dominant flag. */
+const FLAG_RANK: Record<SectionFlag, number> = {
+  "racers-only": 9,
+  "shuttle-zone": 8,
+  "no-aux-vehicles": 7,
+  "no-rvs": 6,
+  "direct-follow-mandatory": 5,
+  "altitude-pass": 4,
+  "leapfrog-daytime": 3,
+  "tz-change": 2,
+  "no-services": 1,
+};
+function dominantFlag(flags: SectionFlag[] | undefined): SectionFlag | null {
+  if (!flags || flags.length === 0) return null;
+  return flags.reduce((best, f) =>
+    FLAG_RANK[f] > FLAG_RANK[best] ? f : best,
+  );
+}
 
 export interface RouteMapProps {
   stations: DbTimeStation[];
@@ -47,6 +79,7 @@ export function RouteMap({
       lng: Number(s.lng),
       lat: Number(s.lat),
       mile: Number(s.mile_total),
+      flags: (s.flags ?? []) as SectionFlag[],
     }));
 
   useEffect(() => {
@@ -128,9 +161,13 @@ export function RouteMap({
         },
       });
 
-      // TS markers
+      // TS markers — color follows dominant section flag if present, else
+      // emerald for passed and zinc for upcoming.
       for (const g of geo) {
         const passed = g.ts <= currentTs;
+        const flag = dominantFlag(g.flags);
+        const ringColor = flag ? FLAG_COLOR[flag] : null;
+        const fill = passed ? "#34d399" : "#71717a";
         const el = document.createElement("div");
         el.className = "raam-ts-marker";
         el.style.cssText = [
@@ -138,10 +175,18 @@ export function RouteMap({
           "height: 14px",
           "border-radius: 50%",
           "border: 2px solid #09090b",
-          `background: ${passed ? "#34d399" : "#71717a"}`,
-          "box-shadow: 0 0 0 1px rgba(255,255,255,0.15)",
+          `background: ${fill}`,
+          ringColor
+            ? `box-shadow: 0 0 0 2px ${ringColor}, 0 0 0 3px rgba(255,255,255,0.18)`
+            : "box-shadow: 0 0 0 1px rgba(255,255,255,0.15)",
           "cursor: pointer",
         ].join(";");
+        const flagsBadgeHtml = (g.flags ?? [])
+          .map(
+            (f) =>
+              `<span style="display:inline-block;margin:2px 4px 0 0;padding:1px 5px;border-radius:8px;background:${FLAG_COLOR[f]};color:#09090b;font-size:9px;font-weight:600">${f}</span>`,
+          )
+          .join("");
         const popup = new mapboxgl.Popup({
           offset: 14,
           closeButton: false,
@@ -151,6 +196,7 @@ export function RouteMap({
              <div style="font-family:ui-monospace;font-size:10px;color:#71717a;margin-top:2px">
                mi ${g.mile.toFixed(1)}
              </div>
+             ${flagsBadgeHtml ? `<div style="margin-top:4px">${flagsBadgeHtml}</div>` : ""}
            </div>`,
         );
         new mapboxgl.Marker(el)
@@ -203,6 +249,13 @@ export function RouteMap({
     );
   }
 
+  // Build a legend showing which section flags are actually present in this set
+  // of stations. Hides flags that don't appear (no clutter).
+  const presentFlags = new Set<SectionFlag>();
+  for (const s of stations) {
+    for (const f of (s.flags ?? []) as SectionFlag[]) presentFlags.add(f);
+  }
+
   return (
     <>
       <style jsx global>{`
@@ -220,6 +273,25 @@ export function RouteMap({
         className={className}
         style={{ width: "100%", height }}
       />
+      {presentFlags.size > 0 && (
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px] text-zinc-400">
+          <span className="text-zinc-500">Section flags:</span>
+          {Array.from(presentFlags)
+            .sort((a, b) => FLAG_RANK[b] - FLAG_RANK[a])
+            .map((f) => (
+              <span
+                key={f}
+                className="inline-flex items-center gap-1 rounded-full border border-zinc-800 bg-zinc-900/60 px-2 py-0.5"
+              >
+                <span
+                  className="h-1.5 w-1.5 rounded-full"
+                  style={{ background: FLAG_COLOR[f] }}
+                />
+                {f}
+              </span>
+            ))}
+        </div>
+      )}
     </>
   );
 }

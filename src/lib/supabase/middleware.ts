@@ -5,7 +5,8 @@ import { NextResponse, type NextRequest } from "next/server";
  * Session-refreshing middleware helper for Supabase SSR.
  *
  * Public routes (no session required):
- *   /login, /auth/*, /spectator, /api/gps/ping, /_next/*, /raam/*, /favicon.ico
+ *   /login, /auth/*, /spectator, /api/gps/ping, /_next/*, /raam/*, /favicon.ico,
+ *   /help, /handbook (operator manual must be readable before signup).
  *
  * Everything else redirects to /login if no user.
  */
@@ -21,6 +22,8 @@ const PUBLIC_PREFIXES = [
   "/terms",
   "/signup",
   "/onboarding",
+  "/help",
+  "/handbook",
   "/_next",
   "/raam",
   "/favicon",

@@ -1,0 +1,68 @@
+{
+  "team_id_owner": "Team Kabir",
+  "rider": "Kabir Rachure",
+  "groupset_default": "Shimano Dura-Ace Di2 R9200 (12-speed electronic)",
+  "updated_at": "2026-04-27",
+  "bikes": [
+    {
+      "id": "addict",
+      "model_full": "Scott Addict",
+      "type": "road-endurance",
+      "frame_material": "carbon",
+      "groupset": "Shimano Dura-Ace Di2 R9200",
+      "color": "Matte black",
+      "manual_pdf": "/manuals/scott-addict-2026.pdf",
+      "use_case": "Climbs, rolling terrain, all-purpose endurance",
+      "notes": "Primary climbing bike. Wider tire clearance than Foil."
+    },
+    {
+      "id": "foil-white",
+      "model_full": "Scott Foil RC",
+      "type": "road-aero",
+      "frame_material": "carbon",
+      "groupset": "Shimano Dura-Ace Di2 R9200",
+      "color": "White / Silver Foil",
+      "manual_pdf": "/manuals/scott-foil-rc-2023.pdf",
+      "use_case": "Flat fast sections, headwind, sustained speed",
+      "notes": "Aero bike. Use on Kansas plains, Indiana flats, NJ run-in."
+    },
+    {
+      "id": "foil-blue",
+      "model_full": "Scott Foil RC",
+      "type": "road-aero",
+      "frame_material": "carbon",
+      "groupset": "Shimano Dura-Ace Di2 R9200",
+      "color": "Blue Foil",
+      "manual_pdf": "/manuals/scott-foil-rc-2023.pdf",
+      "use_case": "Flat fast sections, headwind, sustained speed",
+      "notes": "Backup Foil. Same spec as foil-white."
+    },
+    {
+      "id": "plasma-tt",
+      "model_full": "Scott Plasma TT",
+      "type": "time-trial",
+      "frame_material": "carbon",
+      "groupset": "Shimano Dura-Ace Di2 R9200",
+      "color": "Teal / Purple fade",
+      "manual_pdf": "/manuals/scott-plasma-6-2020.pdf",
+      "use_case": "TT-position long flats, deep aero stretches",
+      "notes": "TT bike. Different cockpit + brake config. Only Joby/Varun/Vishal/Satish should handle. Requires sustained aero position — not for climbs or rough roads."
+    }
+  ],
+  "groupset_app_pairings": [
+    {
+      "name": "Shimano E-TUBE Project Cyclist",
+      "platform": "iOS + Android",
+      "purpose": "Di2 firmware, shift-mode tuning, button mapping",
+      "applies_to_bikes": ["addict", "foil-white", "foil-blue", "plasma-tt"]
+    }
+  ],
+  "manuals_pending": [
+    {
+      "name": "Shimano ROAD Di2 Dealer's Manual (DM-RAGN010-02)",
+      "url": "https://si.shimano.com/en/pdfs/dm/RAGN010/DM-RAGN010-02-ENG.pdf",
+      "reason": "Shimano CDN blocks scripted download. Open in browser, save manually to public/manuals/shimano-road-di2-general.pdf",
+      "covers": "Master wiring + battery + shifter tuning across Dura-Ace Di2 R9200 + Ultegra Di2 R8100"
+    }
+  ]
+}

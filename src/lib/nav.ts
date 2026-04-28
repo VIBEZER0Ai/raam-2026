@@ -60,6 +60,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/admin", label: "Admin", desc: "Team settings + overview" },
       { href: "/admin/roster", label: "Roster", desc: "Add, edit, deactivate crew" },
       { href: "/spectator", label: "Spectator", desc: "Public live tracker" },
+      { href: "/help", label: "Help", desc: "Operator handbook + FAQ" },
     ],
   },
 ];

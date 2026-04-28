@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { ChevronDown, LogOut, Plus, Shield, Ruler } from "lucide-react";
+import { ChevronDown, LogOut, Plus, Shield, Ruler, BookOpen } from "lucide-react";
 import { signOut } from "@/app/login/actions";
 import { setTeamUnits } from "@/app/actions/units";
 import { cn } from "@/lib/utils";
@@ -197,6 +197,16 @@ export function AccountMenu({
           )}
 
           <div className="border-t border-[color:var(--border)] px-1.5 py-1.5">
+            <Link
+              href="/help"
+              onClick={() => setOpen(false)}
+              className={cn(
+                "flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[12px] font-semibold text-[color:var(--fg-2)] hover:bg-[color:var(--bg-row)]",
+              )}
+            >
+              <BookOpen className="h-3.5 w-3.5" />
+              Help &amp; handbook
+            </Link>
             <Link
               href="/signup"
               onClick={() => setOpen(false)}

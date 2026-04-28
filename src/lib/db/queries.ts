@@ -603,3 +603,114 @@ export async function getPenaltyLedger(): Promise<PenaltyLedger> {
     dq_risk_count: penalty_1h_count,
   };
 }
+
+/* =========================================================================
+ * AA6.1 — Stop requests
+ * ========================================================================= */
+
+export interface DbStopRequest {
+  id: string;
+  team_id: string;
+  created_at: string;
+  requested_by_label: string | null;
+  reason:
+    | "loo"
+    | "food"
+    | "mech"
+    | "medical"
+    | "sleep"
+    | "media"
+    | "other";
+  is_emergency: boolean;
+  dispatch_at: string;
+  notes: string | null;
+  status: "pending" | "acknowledged" | "dispatched" | "cancelled";
+  rider_acknowledged_at: string | null;
+  dispatched_at: string | null;
+  cancelled_at: string | null;
+  cancelled_reason: string | null;
+}
+
+/** Active = not cancelled and not yet dispatched-and-completed long ago. */
+export async function getActiveStopRequests(): Promise<DbStopRequest[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("stop_request")
+    .select("*")
+    .in("status", ["pending", "acknowledged", "dispatched"])
+    .order("created_at", { ascending: false })
+    .limit(20);
+  if (error) {
+    console.error("[getActiveStopRequests]", error);
+    return [];
+  }
+  return (data ?? []) as DbStopRequest[];
+}
+
+/* =========================================================================
+ * AA6.3 + AA6.9 — Vehicles + positions
+ * ========================================================================= */
+
+export interface DbSupportVehicle {
+  id: string;
+  team_id: string | null;
+  call_sign: string;
+  category: string;
+  kind: "follow" | "leapfrog" | "aux" | "rv" | "media";
+  active: boolean;
+  plate: string | null;
+  notes: string | null;
+}
+
+export interface DbVehiclePosition {
+  id: string;
+  team_id: string;
+  vehicle_id: string;
+  ping_at: string;
+  lat: number;
+  lng: number;
+  speed_mph: number | null;
+  heading: number | null;
+  source: string | null;
+  driver_crew_id: string | null;
+  navigator_crew_id: string | null;
+  note: string | null;
+}
+
+/** All active support vehicles for the user's current team. */
+export async function getSupportVehicles(): Promise<DbSupportVehicle[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("support_vehicle")
+    .select("id,team_id,call_sign,category,kind,active,plate,notes")
+    .eq("active", true)
+    .order("kind", { ascending: true });
+  if (error) {
+    console.error("[getSupportVehicles]", error);
+    return [];
+  }
+  return (data ?? []) as DbSupportVehicle[];
+}
+
+/** Latest vehicle_position row per vehicle. Returns one row per vehicle_id. */
+export async function getLatestVehiclePositions(): Promise<DbVehiclePosition[]> {
+  const supabase = await createClient();
+  // Naive but tiny dataset (1-3 vehicles): pull last 50 pings, group in JS.
+  const { data, error } = await supabase
+    .from("vehicle_position")
+    .select("*")
+    .order("ping_at", { ascending: false })
+    .limit(50);
+  if (error) {
+    console.error("[getLatestVehiclePositions]", error);
+    return [];
+  }
+  const seen = new Set<string>();
+  const latest: DbVehiclePosition[] = [];
+  for (const row of (data ?? []) as DbVehiclePosition[]) {
+    if (seen.has(row.vehicle_id)) continue;
+    seen.add(row.vehicle_id);
+    latest.push(row);
+  }
+  return latest;
+}

@@ -35,6 +35,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Operate",
     items: [
       { href: "/crew", label: "Crew", desc: "On-duty roster + shifts" },
+      { href: "/vehicles", label: "Vehicles", desc: "Follow + leapfrog status" },
       { href: "/time-stations", label: "Time Stations", desc: "Split tracker vs target" },
       { href: "/nutrition", label: "Nutrition", desc: "Fueling log + hourly targets" },
       { href: "/sleep", label: "Sleep", desc: "Rest plan + Whoop overlay" },

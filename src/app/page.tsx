@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { WarRoom } from "@/components/screens/war-room";
 import { StrategyCards } from "@/components/screens/strategy-cards";
+import { StopRequestPanel } from "@/components/screens/stop-request-panel";
+import { SeparationAlert } from "@/components/screens/separation-banner";
 import { Landing } from "@/components/screens/landing";
 import {
   getTimeStations,
@@ -8,9 +10,12 @@ import {
   getDerivedRaceState,
   getCrewMembers,
   getRecentAlerts,
+  getActiveStopRequests,
+  getSupportVehicles,
+  getLatestVehiclePositions,
 } from "@/lib/db/queries";
 import { getCurrentUser } from "@/lib/auth/session";
-import { getUserTeams } from "@/lib/team";
+import { getUserTeams, getDefaultTeam } from "@/lib/team";
 
 // Fresh Supabase pull every 30s for logged-in dashboard
 export const revalidate = 30;
@@ -32,13 +37,18 @@ export default async function Home() {
   // Future: multi-team picker. For MVP: jump to the first team's dashboard.
   // War Room stays at / for Team Kabir (team_id is backfilled on all rows).
 
-  const [stations, targets, derived, crew, alerts] = await Promise.all([
-    getTimeStations(),
-    getTargetPlan(),
-    getDerivedRaceState(),
-    getCrewMembers(),
-    getRecentAlerts({ limit: 10, openOnly: true }),
-  ]);
+  const [stations, targets, derived, crew, alerts, stops, vehicles, vehiclePositions, team] =
+    await Promise.all([
+      getTimeStations(),
+      getTargetPlan(),
+      getDerivedRaceState(),
+      getCrewMembers(),
+      getRecentAlerts({ limit: 10, openOnly: true }),
+      getActiveStopRequests(),
+      getSupportVehicles(),
+      getLatestVehiclePositions(),
+      getDefaultTeam(),
+    ]);
 
   if (stations.length === 0) {
     return (
@@ -57,6 +67,12 @@ export default async function Home() {
 
   return (
     <>
+      <SeparationAlert
+        vehicles={vehicles}
+        positions={vehiclePositions}
+        riderSpeedMph={derived.currentSpeed}
+        units={team?.units ?? "imperial"}
+      />
       <WarRoom
         stations={stations}
         targets={targets}
@@ -64,6 +80,7 @@ export default async function Home() {
         crew={crew}
         alerts={alerts}
       />
+      <StopRequestPanel active={stops} />
       <StrategyCards />
     </>
   );

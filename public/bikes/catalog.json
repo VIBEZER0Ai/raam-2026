@@ -57,12 +57,13 @@
       "applies_to_bikes": ["addict", "foil-white", "foil-blue", "plasma-tt"]
     }
   ],
-  "manuals_pending": [
+  "shared_manuals": [
     {
-      "name": "Shimano ROAD Di2 Dealer's Manual (DM-RAGN010-02)",
-      "url": "https://si.shimano.com/en/pdfs/dm/RAGN010/DM-RAGN010-02-ENG.pdf",
-      "reason": "Shimano CDN blocks scripted download. Open in browser, save manually to public/manuals/shimano-road-di2-general.pdf",
-      "covers": "Master wiring + battery + shifter tuning across Dura-Ace Di2 R9200 + Ultegra Di2 R8100"
+      "name": "Shimano ROAD Di2 Dealer's Manual",
+      "code": "DM-RAGN010-02",
+      "pdf": "/manuals/shimano-road-di2-general-DM-RAGN010.pdf",
+      "covers": "Master wiring + battery + shifter tuning across Dura-Ace Di2 R9200 + Ultegra Di2 R8100",
+      "applies_to_bikes": ["addict", "foil-white", "foil-blue", "plasma-tt"]
     }
   ]
 }

@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { ChevronDown, LogOut, Plus, Shield } from "lucide-react";
+import { ChevronDown, LogOut, Plus, Shield, Ruler } from "lucide-react";
 import { signOut } from "@/app/login/actions";
+import { setTeamUnits } from "@/app/actions/units";
 import { cn } from "@/lib/utils";
+import type { UnitsPref } from "@/lib/units";
 
 export interface AccountMenuMembership {
   slug: string;
@@ -17,7 +19,7 @@ export interface AccountMenuProps {
   userFullName?: string | null;
   userInitials?: string | null;
   isPlatformAdmin: boolean;
-  currentTeam: { slug: string; name: string; role: string } | null;
+  currentTeam: { slug: string; name: string; role: string; units: UnitsPref } | null;
   allTeams: AccountMenuMembership[];
 }
 
@@ -31,6 +33,15 @@ export function AccountMenu({
 }: AccountMenuProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
+  const [pendingUnits, startUnits] = useTransition();
+  const flipUnits = () => {
+    if (!currentTeam) return;
+    const next: UnitsPref =
+      currentTeam.units === "metric" ? "imperial" : "metric";
+    startUnits(async () => {
+      await setTeamUnits({ teamSlug: currentTeam.slug, units: next });
+    });
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -160,6 +171,28 @@ export function AccountMenu({
                     </Link>
                   ))}
               </div>
+            </div>
+          )}
+
+          {currentTeam && (
+            <div className="border-t border-[color:var(--border)] px-3 py-2">
+              <div className="text-[9px] font-bold uppercase tracking-[0.18em] text-[color:var(--fg-4)]">
+                Units
+              </div>
+              <button
+                type="button"
+                onClick={flipUnits}
+                disabled={pendingUnits}
+                className="mt-1.5 flex w-full items-center justify-between rounded-lg bg-[color:var(--bg-row)] px-2.5 py-2 text-[12px] font-semibold hover:bg-[color:var(--bg-row)]/80 disabled:opacity-60"
+              >
+                <span className="flex items-center gap-2">
+                  <Ruler className="h-3.5 w-3.5" />
+                  {currentTeam.units === "metric" ? "Metric (km, °C)" : "Imperial (mi, °F)"}
+                </span>
+                <span className="rounded-sm border border-[color:var(--border)] bg-[color:var(--bg)] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-[color:var(--fg-3)]">
+                  {pendingUnits ? "…" : "switch"}
+                </span>
+              </button>
             </div>
           )}
 

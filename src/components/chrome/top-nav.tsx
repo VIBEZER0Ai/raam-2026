@@ -5,7 +5,9 @@ import { useEffect, useState } from "react";
 import { Bell, Moon, Sun } from "lucide-react";
 import { RACE } from "@/lib/raam/race-config";
 import { useTick } from "@/lib/raam/use-tick";
-import { fmtDHMS, msDiff, elapsedSince, pad2 } from "@/lib/raam/format";
+import { fmtDHMS, msDiff, pad2 } from "@/lib/raam/format";
+import { elapsedMs, elapsedParts, raceState } from "@/lib/raam/race-clock";
+import type { RaceState } from "@/lib/raam/race-clock";
 import { SosButton } from "@/components/chrome/sos-button";
 import { MobileNav } from "@/components/chrome/mobile-nav";
 import { GroupedNav } from "@/components/chrome/grouped-nav";
@@ -30,13 +32,20 @@ const LEGACY_TABS_IGNORED = [
   { href: "/debrief",       label: "Debrief",      group: "lifecycle" },
 ];
 
+import type { UnitsPref } from "@/lib/units";
+
 export interface TopNavProps {
   userEmail?: string | null;
   userFullName?: string | null;
   userInitials?: string | null;
   isPlatformAdmin?: boolean;
   alertCount?: number;
-  currentTeam?: { slug: string; name: string; role: string } | null;
+  currentTeam?: {
+    slug: string;
+    name: string;
+    role: string;
+    units: UnitsPref;
+  } | null;
   allTeams?: AccountMenuMembership[];
 }
 
@@ -79,7 +88,15 @@ export function TopNav({
     }
   }, [dark, night]);
 
-  const elapsed = elapsedSince(RACE.start.datetime_utc);
+  // Race-clock: state-aware. Pre-race shows T-countdown, live shows elapsed,
+  // cutoff/finished shows total. Single source of truth in race-clock.ts.
+  const state = raceState();
+  const ep = elapsedParts(elapsedMs());
+  const elapsedLabel = state === "pre" ? "Starts in" : "Elapsed";
+  const elapsedDisplay =
+    state === "pre"
+      ? `${Math.abs(ep.days)}d ${pad2(ep.hours)}:${pad2(ep.minutes)}:${pad2(ep.seconds)}`
+      : `${ep.days}d ${pad2(ep.hours)}:${pad2(ep.minutes)}:${pad2(ep.seconds)}`;
   const cutoff = fmtDHMS(msDiff(RACE.finish.hard_cutoff_utc));
 
   return (
@@ -98,14 +115,16 @@ export function TopNav({
 
         <div className="ml-4 hidden items-center gap-3 lg:flex">
           <ClockCell
-            label="Elapsed"
-            value={`${elapsed.d}d ${pad2(elapsed.h)}:${pad2(elapsed.m)}:${pad2(elapsed.s)}`}
+            label={elapsedLabel}
+            value={elapsedDisplay}
+            tone={state === "pre" ? "blue" : state === "cutoff" ? "red" : "fg"}
           />
           <ClockCell
             label="Cutoff"
             value={`${cutoff.d}d ${pad2(cutoff.h)}:${pad2(cutoff.m)}:${pad2(cutoff.s)}`}
-            orange
+            tone="orange"
           />
+          <RaceStateBadge state={state} />
         </div>
 
         <div className="flex-1" />
@@ -161,25 +180,61 @@ export function TopNav({
 function ClockCell({
   label,
   value,
-  orange,
+  tone = "fg",
 }: {
   label: string;
   value: string;
-  orange?: boolean;
+  tone?: "fg" | "orange" | "blue" | "red";
 }) {
+  const toneClass =
+    tone === "orange"
+      ? "text-[color:var(--strava-orange)]"
+      : tone === "blue"
+      ? "text-sky-400"
+      : tone === "red"
+      ? "text-red-400"
+      : "text-[color:var(--fg)]";
   return (
     <div className="flex flex-col gap-0.5">
       <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[color:var(--fg-4)]">
         {label}
       </span>
-      <span
-        className={cn(
-          "font-mono text-[14px] font-bold tabular-nums",
-          orange ? "text-[color:var(--strava-orange)]" : "text-[color:var(--fg)]",
-        )}
-      >
+      <span className={cn("font-mono text-[14px] font-bold tabular-nums", toneClass)}>
         {value}
       </span>
     </div>
+  );
+}
+
+function RaceStateBadge({ state }: { state: RaceState }) {
+  const cfg =
+    state === "pre"
+      ? { label: "PRE", cls: "border-sky-400 bg-sky-400/10 text-sky-400" }
+      : state === "live"
+      ? { label: "LIVE", cls: "border-emerald-400 bg-emerald-400/10 text-emerald-400" }
+      : state === "finished"
+      ? { label: "FIN", cls: "border-zinc-400 bg-zinc-400/10 text-zinc-300" }
+      : { label: "CUTOFF", cls: "border-red-400 bg-red-400/10 text-red-400" };
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em]",
+        cfg.cls,
+      )}
+    >
+      <span
+        className={cn(
+          "h-1.5 w-1.5 rounded-full",
+          state === "pre"
+            ? "bg-sky-400"
+            : state === "live"
+            ? "bg-emerald-400 animate-pulse"
+            : state === "finished"
+            ? "bg-zinc-300"
+            : "bg-red-400",
+        )}
+      />
+      {cfg.label}
+    </span>
   );
 }

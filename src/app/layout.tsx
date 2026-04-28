@@ -12,6 +12,8 @@ import {
   getRecentAlerts,
 } from "@/lib/db/queries";
 import { RACE } from "@/lib/raam/race-config";
+import { elapsedMs as raceElapsedMs, elapsedParts, raceState } from "@/lib/raam/race-clock";
+import type { UnitsPref } from "@/lib/units";
 import type { FooterStats } from "@/components/chrome/footer-bar";
 import "./globals.css";
 
@@ -64,18 +66,16 @@ export default async function RootLayout({
     alertCount = alerts.filter(
       (a) => a.severity === "CRITICAL" || a.severity === "WARN",
     ).length;
-    // Elapsed since race start
-    const startMs = new Date(RACE.start.datetime_utc).getTime();
-    const nowMs = Date.now();
-    const elapsedMs = Math.max(0, nowMs - startMs);
-    const elapsedHours = elapsedMs / 3_600_000;
-    const d = Math.floor(elapsedHours / 24);
-    const h = Math.floor(elapsedHours % 24);
-    const m = Math.floor((elapsedMs / 60_000) % 60);
+    // Elapsed since race start — single source of truth in lib/raam/race-clock.ts.
+    // Pre-race shows T-countdown so the footer is meaningful before start.
+    const state = raceState();
+    const ms = raceElapsedMs();
+    const ep = elapsedParts(ms);
     const elapsedLabel =
-      elapsedMs === 0
-        ? "—"
-        : `${d}d ${h.toString().padStart(2, "0")}h ${m.toString().padStart(2, "0")}m`;
+      state === "pre"
+        ? `T-${Math.abs(ep.days)}d ${String(ep.hours).padStart(2, "0")}h ${String(ep.minutes).padStart(2, "0")}m`
+        : `${ep.days}d ${String(ep.hours).padStart(2, "0")}h ${String(ep.minutes).padStart(2, "0")}m`;
+    const elapsedHours = state === "pre" ? 0 : ms / 3_600_000;
     const avgSpeed =
       elapsedHours > 0 && derived.currentMile > 0
         ? derived.currentMile / elapsedHours
@@ -103,6 +103,7 @@ export default async function RootLayout({
     }
   }
   const defaultTeam = memberships[0];
+  const units: UnitsPref = defaultTeam?.team.units ?? "imperial";
 
   return (
     <html lang="en" className={`${inter.variable} ${jetbrains.variable} h-full`}>
@@ -128,6 +129,7 @@ export default async function RootLayout({
                       slug: defaultTeam.team.slug,
                       name: defaultTeam.team.name,
                       role: defaultTeam.role,
+                      units: defaultTeam.team.units,
                     }
                   : null
               }
@@ -153,7 +155,7 @@ export default async function RootLayout({
             )}
             {children}
           </main>
-          {!isPublicMarketing && <FooterBar stats={footerStats} />}
+          {!isPublicMarketing && <FooterBar stats={footerStats} units={units} />}
         </div>
       </body>
     </html>

@@ -9,6 +9,7 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/session";
+import type { UnitsPref } from "@/lib/units";
 
 export interface Team {
   id: string;
@@ -21,6 +22,7 @@ export interface Team {
   plan: "free" | "pro" | "team";
   owner_user_id: string | null;
   active: boolean;
+  units: UnitsPref;
 }
 
 export interface TeamMembership {

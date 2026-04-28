@@ -2,6 +2,7 @@
 
 import { RACE } from "@/lib/raam/race-config";
 import { useTick } from "@/lib/raam/use-tick";
+import { formatDistance, formatSpeed, speedUnit, type UnitsPref } from "@/lib/units";
 import { cn } from "@/lib/utils";
 
 export interface FooterStats {
@@ -13,7 +14,13 @@ export interface FooterStats {
   totalTs: number;
 }
 
-export function FooterBar({ stats }: { stats?: FooterStats | null }) {
+export function FooterBar({
+  stats,
+  units = "imperial",
+}: {
+  stats?: FooterStats | null;
+  units?: UnitsPref;
+}) {
   useTick(1000);
   // Fallback to sensible zeros so the bar renders even before first DB fetch.
   const s: FooterStats = stats ?? {
@@ -28,9 +35,9 @@ export function FooterBar({ stats }: { stats?: FooterStats | null }) {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-30 flex gap-3 overflow-x-auto border-t border-[color:var(--border)] bg-[color:var(--bg-elev)] px-3 py-2 sm:gap-4 sm:px-5 sm:py-2.5">
-      <FCell label="Distance" value={`${s.currentMile.toFixed(1)} mi`} />
-      <FCell label="To finish" value={`${toFin.toFixed(1)} mi`} />
-      <FCell label="Avg mph" value={s.avgSpeed.toFixed(2)} />
+      <FCell label="Distance" value={formatDistance(s.currentMile, units)} />
+      <FCell label="To finish" value={formatDistance(toFin, units)} />
+      <FCell label={`Avg ${speedUnit(units)}`} value={formatSpeed(s.avgSpeed, units, 2)} />
       <FCell
         label="TS progress"
         value={`${s.currentTs}/${s.totalTs}`}

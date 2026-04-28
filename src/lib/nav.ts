@@ -49,6 +49,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Plan",
     items: [
       { href: "/pre-race", label: "Pre-race", desc: "Checklist + cut-offs" },
+      { href: "/bikes", label: "Bikes", desc: "Fleet + manuals" },
       { href: "/debrief", label: "Debrief", desc: "Post-race review" },
     ],
   },

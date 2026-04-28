@@ -21,7 +21,9 @@ import {
   Bike,
   AlertTriangle,
   CheckCircle2,
+  Smartphone,
 } from "lucide-react";
+import Link from "next/link";
 
 interface RiderState {
   lat: number;
@@ -334,6 +336,15 @@ function VehicleCard({
             {vehicle.notes}
           </div>
         )}
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Link
+            href={`/track/${vehicle.id}`}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--border)] bg-[color:var(--bg)] px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-[color:var(--fg-2)] hover:border-[color:var(--strava-orange)] hover:text-[color:var(--strava-orange)]"
+          >
+            <Smartphone className="h-3.5 w-3.5" />
+            Track from this phone
+          </Link>
+        </div>
       </CardBody>
     </Card>
   );
